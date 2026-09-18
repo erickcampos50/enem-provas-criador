@@ -198,3 +198,19 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - O smoke test passou a validar a busca inicial, a ausência do fallback e o mínimo de três linhas.
 
 **Validação:** `npm test`, `npm run build` e `MONTADOR_TEST_URL=http://127.0.0.1:5191 npm run test:browser` aprovados.
+
+
+## 18/09/2026 — Otimização da paginação SQLite
+
+**Diagnóstico:** o snippet era calculado por uma subconsulta FTS correlacionada antes do `LIMIT 20`, fazendo o worker varrer praticamente todas as 2.757 questões. A troca de página levava aproximadamente 4,3–4,4 segundos no Chromium.
+
+**Correção:**
+
+- A consulta passou a materializar primeiro a página solicitada em uma CTE `paged AS MATERIALIZED`.
+- Snippets sem termo usam diretamente `context`, `alternatives_introduction` e alternativas indexadas, sem varrer a tabela FTS.
+- Snippets com termo e verificações de imagens são executados somente nos registros da página.
+- A interface preserva os resultados durante a consulta, desabilita a paginação enquanto aguarda e ignora respostas fora de ordem.
+
+**Resultado:** a troca para a página 2 passou a levar aproximadamente 61 ms no Chromium local, contra mais de 4 segundos antes da otimização.
+
+**Validação:** `npm test` (9 aprovados), smoke test de navegador com limite de 2 segundos e `npm run build` aprovados.

@@ -14,7 +14,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 - **Fase ativa:** manutenção incremental; nenhuma fase bloqueia o uso da primeira versão.
 - **Status:** implementação inicial concluída com testes automatizados e smoke test de navegador.
 - **Progresso:** 5/5 áreas implementadas; a coleta contra API real permanece uma operação controlada futura.
-- **Última atividade:** 18/09/2026 — prévias textuais da biblioteca corrigidas e validadas com contexto, introdução e alternativas.
+- **Última atividade:** 18/09/2026 — paginação SQLite otimizada com materialização da página antes de snippets e imagens; troca validada em aproximadamente 61 ms.
 - **Próxima ação recomendada:** executar uma coleta real em janela controlada, usando `npm run build:database`, somente quando houver autorização para atualizar o banco canônico.
 
 ## Decisões vigentes
@@ -60,6 +60,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 | 18/09/2026 | Implementação e validação final | App independente, coletor, SQLite WASM, montagem, exportação e backup implementados; testes e smoke browser aprovados |
 | 18/09/2026 | Impressão monocromática e paginação | Folha de respostas compacta com identificação do aluno, paleta em tons de cinza e rodapé de páginas validada no smoke test |
 | 18/09/2026 | Prévia textual da biblioteca | Snippets do FTS5, limpeza de Markdown e cards com três linhas mínimas validados no smoke test |
+| 18/09/2026 | Paginação SQLite otimizada | CTE materializada, snippets pós-paginação, proteção contra respostas fora de ordem e troca de página em aproximadamente 61 ms |
 
 ---
 *Última atualização: 18/09/2026, após a validação final da implementação inicial.*

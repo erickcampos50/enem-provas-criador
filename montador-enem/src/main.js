@@ -34,6 +34,7 @@ const state = {
 let draftTimer;
 let previewTimer;
 let draggedId = null;
+let searchRequestId = 0;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
@@ -215,18 +216,35 @@ async function setSelected(id, selected) {
   scheduleDraft(); renderSelected(); renderResults(); schedulePreview();
 }
 
+function setSearchBusy(busy) {
+  const pagination = $("#pagination");
+  pagination.attr("aria-busy", busy ? "true" : "false");
+  pagination.find("button").prop("disabled", busy);
+}
+
 async function performSearch(page = 1) {
+  const requestId = ++searchRequestId;
+  const previousPage = state.page;
   state.page = page;
-  state.filters.q = $('#search-query').val().trim();
-  state.filters.year = $('#filter-year').val();
-  state.filters.discipline = $('#filter-discipline').val();
-  state.filters.language = $('#filter-language').val();
-  state.filters.hasImages = $('#filter-images').prop('checked') ? true : undefined;
-  const hideSelected = $('#filter-hide-selected').prop('checked');
+  state.filters.q = $("#search-query").val().trim();
+  state.filters.year = $("#filter-year").val();
+  state.filters.discipline = $("#filter-discipline").val();
+  state.filters.language = $("#filter-language").val();
+  state.filters.hasImages = $("#filter-images").prop("checked") ? true : undefined;
+  const hideSelected = $("#filter-hide-selected").prop("checked");
+  setSearchBusy(true);
   try {
     const response = await db.searchQuestions({ ...state.filters, excludeIds: hideSelected ? state.selected.map((item) => item.id) : [], page, pageSize: state.pageSize });
+    if (requestId !== searchRequestId) return;
     state.results = response.results; state.totalResults = response.total; response.results.forEach((item) => state.questionCache.set(item.id, { ...state.questionCache.get(item.id), ...item })); renderResults();
-  } catch (error) { showToast(error.message, 'danger'); }
+  } catch (error) {
+    if (requestId !== searchRequestId) return;
+    state.page = previousPage;
+    renderResults();
+    showToast(error.message, "danger");
+  } finally {
+    if (requestId === searchRequestId) setSearchBusy(false);
+  }
 }
 
 function currentVariants() {

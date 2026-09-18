@@ -25,6 +25,17 @@ try {
   });
   assert.ok(previewMetrics.minHeight >= previewMetrics.lineHeight * 2.9);
   assert.equal(previewMetrics.lineClamp, "3");
+  const pageOneTitle = await page.locator(".result-title").first().innerText();
+  const pageStart = await page.evaluate(() => performance.now());
+  await page.locator("#pagination button").nth(1).click();
+  await page.locator("#pagination span").filter({ hasText: "Página 2" }).waitFor({ state: "visible", timeout: 30_000 });
+  const pageElapsed = await page.evaluate((started) => performance.now() - started, pageStart);
+  assert.ok(pageElapsed < 2_000, "A paginação excedeu 2 segundos: " + pageElapsed + "ms");
+  const pageTwoTitle = await page.locator(".result-title").first().innerText();
+  assert.notEqual(pageTwoTitle, pageOneTitle);
+  await page.locator("#pagination button").first().click();
+  await page.locator("#pagination span").filter({ hasText: "Página 1" }).waitFor({ state: "visible", timeout: 30_000 });
+  assert.equal(await page.locator(".result-title").first().innerText(), pageOneTitle);
 
   await page.locator('#search-query').fill('fotossíntese');
   await page.locator('#search-form button[type="submit"]').click();

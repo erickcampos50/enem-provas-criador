@@ -437,36 +437,62 @@ function searchQuestions(payload) {
   const total = Number(asNumber(countRows[0]?.total) ?? 0);
 
   const resultBind = { ...query.bind, $limit: options.limit, $offset: options.offset };
+  const snippetSelect = options.ftsQuery
+    ? `(SELECT snippet(search_index, 3, '', '', '…', 18)
+         FROM search_index
+        WHERE search_index.question_id = paged.id
+          AND search_index MATCH $fts
+        LIMIT 1) AS snippet,`
+    : `trim(
+         substr(coalesce(paged.context, ''), 1, 480) || char(32) ||
+         substr(coalesce(paged.alternatives_introduction, ''), 1, 480) || char(32) ||
+         coalesce((
+           SELECT group_concat(alternative_preview.text, char(32))
+             FROM (
+               SELECT substr(trim(alternative_preview.text), 1, 480) AS text
+                 FROM alternatives AS alternative_preview
+                WHERE alternative_preview.question_id = paged.id
+                  AND alternative_preview.text IS NOT NULL
+                ORDER BY alternative_preview.id
+                LIMIT 3
+             ) AS alternative_preview
+         ), '')
+       ) AS snippet,`;
   const rows = executeRows(
     db,
-    `SELECT q.id,
-            q.year,
-            q.number,
-            q.language,
-            q.title,
-            q.discipline,
-            ${options.ftsQuery
-              ? `(SELECT snippet(search_index, 3, '', '', '…', 18)
-                   FROM search_index
-                  WHERE search_index.question_id = q.id
-                    AND search_index MATCH $fts
-                  LIMIT 1) AS snippet,`
-              : `(SELECT trim(group_concat(preview.content, char(32))) FROM (SELECT substr(trim(search_preview.content), 1, 480) AS content FROM search_index AS search_preview WHERE search_preview.question_id = q.id ORDER BY CASE search_preview.field WHEN 'context' THEN 1 WHEN 'alternativesIntroduction' THEN 2 ELSE 3 END, search_preview.alternative_id LIMIT 3) AS preview) AS snippet,`}
-            EXISTS (
-              SELECT 1
-                FROM question_files AS result_images
-               WHERE result_images.question_id = q.id
-            ) OR EXISTS (
-              SELECT 1
-                FROM alternatives AS result_alternative_images
-               WHERE result_alternative_images.question_id = q.id
-                 AND result_alternative_images.file_url IS NOT NULL
-            ) AS has_images
-       FROM questions AS q
-       ${query.join}
-       ${query.where}
-      ORDER BY q.year DESC, q.number ASC, q.id ASC
-      LIMIT $limit OFFSET $offset`,
+    `WITH paged AS MATERIALIZED (
+       SELECT q.id,
+              q.year,
+              q.number,
+              q.language,
+              q.title,
+              q.discipline,
+              q.context,
+              q.alternatives_introduction
+         FROM questions AS q
+         ${query.join}
+         ${query.where}
+        ORDER BY q.year DESC, q.number ASC, q.id ASC
+        LIMIT $limit OFFSET $offset
+    )
+    SELECT paged.id,
+           paged.year,
+           paged.number,
+           paged.language,
+           paged.title,
+           paged.discipline,
+           ${snippetSelect}
+           EXISTS (
+             SELECT 1
+               FROM question_files AS result_images
+              WHERE result_images.question_id = paged.id
+           ) OR EXISTS (
+             SELECT 1
+               FROM alternatives AS result_alternative_images
+              WHERE result_alternative_images.question_id = paged.id
+                AND result_alternative_images.file_url IS NOT NULL
+           ) AS has_images
+      FROM paged`,
     resultBind,
   );
 
