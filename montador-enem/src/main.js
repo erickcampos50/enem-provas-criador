@@ -5,6 +5,7 @@ import { DbClient } from './db-client.js';
 import { loadDatabaseBytes } from './cache.js';
 import { buildVariants } from './variants.js';
 import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
+import { downloadPdf } from "./pdf.js";
 import { renderMarkdown } from './markdown.js';
 import { clearDraft, downloadText, exportBackup, parseBackup, readDraft, writeDraft } from './storage.js';
 
@@ -35,6 +36,7 @@ let draftTimer;
 let previewTimer;
 let draggedId = null;
 let searchRequestId = 0;
+let pdfBusy = false;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
@@ -111,7 +113,7 @@ function shell() {
                 ${[['institution','Instituição'],['title','Nome da avaliação'],['subject','Disciplina'],['teacher','Professor'],['className','Turma'],['date','Data'],['period','Bimestre/período'],['duration','Duração'],['totalValue','Valor da prova']].map(([key,label]) => `<div class="col-md-6"><label class="form-label" for="header-${key}">${label}</label><input class="form-control form-control-sm" id="header-${key}" data-header="${key}"></div>`).join('')}
                 <div class="col-12"><label class="form-label" for="header-instructions">Instruções para os alunos</label><textarea class="form-control form-control-sm" rows="2" id="header-instructions" data-header="instructions"></textarea></div>
               </div></div></div>
-              <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar e exportar</h2><div class="row g-2 mb-3"><div class="col-6"><label class="form-label" for="variants-count">Variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div><div class="col-6 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar incorretas</label></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar PDF</strong><small>Versão do aluno · salvar como PDF</small></span></button><p class="pdf-action-help">Documento A4 já formatado para impressão.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">PDF do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-files">HTML e Markdown</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar ZIP</button></div></div></div>
+              <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar e exportar</h2><div class="row g-2 mb-3"><div class="col-6"><label class="form-label" for="variants-count">Variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div><div class="col-6 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar incorretas</label></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar PDF</strong><small>Versão do aluno · A4 renderizado automaticamente</small></span></button><p class="pdf-action-help">O arquivo já sai paginado e com margens fixas; não depende da impressão do navegador.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">Baixar PDF do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-files">HTML e Markdown</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar ZIP</button></div></div></div>
             </div>
           </aside>
         </div>
@@ -126,7 +128,7 @@ function shell() {
           <div class="preview-controls">
             <label class="form-label small mb-1" for="preview-variant">Variante</label>
             <select class="form-select form-select-sm" id="preview-variant" aria-label="Variante da pré-visualização"></select>
-            <button type="button" class="btn btn-primary btn-sm w-100 mt-2" id="btn-preview-pdf">Baixar PDF desta visualização</button><div class="btn-group btn-group-sm mt-2" role="group" aria-label="Versão da pré-visualização">
+            <button type="button" class="btn btn-primary btn-sm w-100 mt-2" id="btn-preview-pdf">Baixar PDF renderizado desta visualização</button><div class="btn-group btn-group-sm mt-2" role="group" aria-label="Versão da pré-visualização">
               <button type="button" class="btn btn-primary" id="preview-student">Aluno</button>
               <button type="button" class="btn btn-outline-primary" id="preview-teacher">Professor</button>
             </div>
@@ -286,8 +288,8 @@ function renderPreview() {
   $('#preview-empty').addClass('d-none');
   frame.onload = async () => {
     try {
-      await waitForPrintImages(frame.contentWindow);
-      setPrintPageCount(frame.contentWindow);
+      await waitForPreviewImages(frame.contentWindow);
+      setPreviewPageCount(frame.contentWindow);
       const contentHeight = frame.contentDocument?.documentElement?.scrollHeight ?? 0;
       frame.style.height = Math.max(760, Math.min(contentHeight + 24, 1800)) + "px";
     } catch {
@@ -315,7 +317,7 @@ function fillHeader() {
   $('#variants-count').val(state.variantsCount); $('#shuffle-incorrect').prop('checked', state.shuffleIncorrect); $('#include-answer-sheet').prop('checked', state.includeAnswerSheet);
 }
 
-function setPrintPageCount(printWindow) {
+function setPreviewPageCount(printWindow) {
   const printDocument = printWindow.document;
   const pageRoot = printDocument.querySelector(".exam-page");
   if (!pageRoot) return;
@@ -336,7 +338,7 @@ function setPrintPageCount(printWindow) {
   printDocument.querySelectorAll(".page-total").forEach((element) => { element.textContent = String(Math.max(1, total)); });
 }
 
-function waitForPrintImages(printWindow) {
+function waitForPreviewImages(printWindow) {
   const images = [...printWindow.document.images];
   return Promise.all(images.map((image) => new Promise((resolve) => {
     if (image.complete) {
@@ -354,62 +356,23 @@ function waitForPrintImages(printWindow) {
   })));
 }
 
-function printWithFrame(html) {
-  const frame = document.createElement('iframe');
-  frame.title = 'Documento para impressão';
-  frame.className = 'print-frame';
-  frame.srcdoc = html;
-  document.body.append(frame);
-
-  const printWindow = async () => {
-    const frameWindow = frame.contentWindow;
-    if (!frameWindow) {
-      frame.remove();
-      showToast('Não foi possível preparar o documento para impressão.', 'danger');
-      return;
-    }
-    let cleaned = false;
-    const cleanup = () => {
-      if (cleaned) return;
-      cleaned = true;
-      frame.remove();
-    };
-    await waitForPrintImages(frameWindow);
-    setPrintPageCount(frameWindow);
-    frameWindow.addEventListener('afterprint', cleanup, { once: true });
-    frameWindow.focus();
-    frameWindow.print();
-    setTimeout(cleanup, 60_000);
-  };
-
-  frame.addEventListener('load', printWindow, { once: true });
-}
-
-function openPrint(teacher, variantIndex = 0) {
+async function openPdf(teacher, variantIndex = 0) {
+  if (pdfBusy) return;
+  pdfBusy = true;
+  const pdfButtons = $('#btn-print-student, #btn-print-teacher, #btn-preview-pdf');
+  pdfButtons.prop('disabled', true).attr('aria-busy', 'true');
   try {
     const variants = currentVariants();
     const variant = variants[Math.min(Math.max(Number(variantIndex) || 0, 0), variants.length - 1)];
-    const html = renderHtmlDocument(state.header, variant, teacher, !teacher && state.includeAnswerSheet);
-    // Não usar noopener/noreferrer aqui: alguns navegadores retornam null mesmo
-    // quando a janela foi aberta pelo clique do usuário, impedindo a impressão.
-    const popup = window.open('', '_blank');
-    if (!popup) {
-      printWithFrame(html);
-      return;
-    }
-    popup.document.open();
-    popup.document.write(html);
-    popup.document.close();
-    popup.focus();
-    const printPopup = async () => {
-      await waitForPrintImages(popup);
-      setPrintPageCount(popup);
-      popup.focus();
-      popup.print();
-    };
-    if (popup.document.readyState === 'complete') setTimeout(() => { void printPopup(); }, 50);
-    else popup.addEventListener('load', () => { void printPopup(); }, { once: true });
-  } catch (error) { showToast(error.message, 'danger'); }
+    showToast('Renderizando PDF A4 com margens fixas…', 'info');
+    const result = await downloadPdf({ header: state.header, variant, teacher, includeAnswerSheet: state.includeAnswerSheet });
+    showToast(`PDF baixado com ${result.pageCount} página(s).`, 'success');
+  } catch (error) {
+    showToast(error.message, 'danger');
+  } finally {
+    pdfBusy = false;
+    pdfButtons.prop('disabled', false).removeAttr('aria-busy');
+  }
 }
 
 async function restoreBackup(value) {
@@ -444,8 +407,8 @@ function bindEvents() {
   $('#preview-teacher').on('click', () => { state.previewTeacher = true; renderPreview(); });
   $('#btn-export-files').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet }); showToast('Arquivos gerados.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
   $('#btn-export-zip').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet, zip: true }); showToast('ZIP gerado.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
-  $('#btn-print-student').on('click', () => openPrint(false, state.previewVariant)); $('#btn-print-teacher').on('click', () => openPrint(true, state.previewVariant));
-  $('#btn-preview-pdf').on('click', () => openPrint(state.previewTeacher, state.previewVariant));
+  $('#btn-print-student').on('click', () => { void openPdf(false, state.previewVariant); }); $('#btn-print-teacher').on('click', () => { void openPdf(true, state.previewVariant); });
+  $('#btn-preview-pdf').on('click', () => { void openPdf(state.previewTeacher, state.previewVariant); });
   $('#btn-export-backup').on('click', () => downloadText('prova-enem-backup.json', exportBackup(state)));
   $('#btn-import-backup').on('click', () => $('#backup-file').trigger('click'));
   $('#backup-file').on('change', async (event) => { const [file] = event.currentTarget.files; if (!file) return; try { await restoreBackup(parseBackup(await file.text())); showToast('Backup restaurado.', 'success'); } catch (error) { showToast(error.message, 'danger'); } event.currentTarget.value = ''; });

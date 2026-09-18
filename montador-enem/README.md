@@ -41,9 +41,16 @@ MONTADOR_TEST_URL=http://127.0.0.1:4173 npm run test:browser
 
 ## PDF
 
-O botão **Baixar PDF** gera a versão A4 formatada e abre a impressão do navegador. Escolha **Salvar como PDF** no destino da impressão. A versão do professor possui um botão separado com o gabarito em tabela.
+O botão principal **Baixar PDF** gera o arquivo diretamente no navegador, sem abrir a janela de impressão e sem depender das configurações de escala, margens ou cabeçalho do usuário.
 
-A saída usa uma paleta monocromática adequada para impressão escolar. A folha de respostas é compacta, inclui nome completo, matrícula/RA, turma, data e assinatura, e identifica a variante para facilitar o arquivamento. Cada documento também exibe o controle de impressão **Página X de Y**; o total é calculado antes da abertura da impressão.
+- O documento é renderizado em A4 retrato com área útil fixa de 180 mm.
+- As margens usadas no arquivo são 15 mm à esquerda/direita, 13 mm no topo e 20 mm na base.
+- Cabeçalhos, questões, figuras, folha de respostas e gabarito respeitam quebras de página controladas; figuras são limitadas à largura útil e a 72 mm de altura para não empurrar o conteúdo para fora da área imprimível.
+- Cada página recebe no próprio PDF o rodapé **Variante X · Página Y de Z**.
+- As imagens continuam referenciadas pelas URLs remotas. O renderizador aguarda o carregamento delas e usa CORS quando o servidor da imagem permite.
+- HTML e Markdown continuam disponíveis como formatos auxiliares; o ZIP mantém esses arquivos.
+
+A impressão do PDF fica a cargo do visualizador de PDF, mas o arquivo já está paginado e não requer que o usuário corrija as opções de impressão do navegador.
 
 ## Prévia dos resultados
 

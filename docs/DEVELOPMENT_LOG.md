@@ -214,3 +214,19 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 **Resultado:** a troca para a página 2 passou a levar aproximadamente 61 ms no Chromium local, contra mais de 4 segundos antes da otimização.
 
 **Validação:** `npm test` (9 aprovados), smoke test de navegador com limite de 2 segundos e `npm run build` aprovados.
+
+
+## 18/09/2026 — Geração direta de PDF com margens fixas
+
+**Problema:** o fluxo anterior abria uma página e dependia de window.print(). Escala, margens, cabeçalhos e destino configurados no navegador podiam alterar o resultado final para usuários sem conhecimento de impressão.
+
+**Correção:**
+
+- Adicionadas as dependências jspdf e html2canvas.
+- O HTML formal da prova é renderizado em um iframe isolado e convertido diretamente para PDF A4.
+- O gerador usa área útil de 180 mm, margens fixas de 15 mm laterais, 13 mm no topo e 20 mm na base, quebra automática orientada a texto e break-inside: avoid para cabeçalhos, questões, figuras, folha e gabarito.
+- Figuras ficam limitadas a 72 mm de altura no modo PDF, aguardam carregamento e usam useCORS; as URLs originais continuam preservadas.
+- Rodapés com variante e Página X de Y são desenhados depois da paginação, diretamente em todas as páginas do arquivo.
+- Os botões de aluno, professor e pré-visualização baixam o PDF renderizado, sem popup e sem chamada de impressão.
+
+**Validação:** npm test (9 aprovados), npm run build e smoke test Chromium (downloads PDF reais com cabeçalho %PDF-, tamanho válido e páginas detectadas) aprovados.
