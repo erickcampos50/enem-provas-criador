@@ -1,0 +1,26 @@
+# Projeto legado independente; não faz parte deste repositório.
+/enem-api/
+
+# Dependências e artefatos de build
+node_modules/
+dist/
+build/
+.vite/
+/montador-enem/public/enem.sqlite
+/montador-enem/public/enem.sqlite.meta.json
+
+# Arquivos locais e credenciais
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+
+# Cobertura e caches
+coverage/
+.cache/
+.parcel-cache/
+
+# Temporários
+*.tmp
+*.temp
