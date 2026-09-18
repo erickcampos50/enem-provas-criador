@@ -39,6 +39,23 @@ MONTADOR_TEST_URL=http://127.0.0.1:4173 npm run test:browser
 
 `enem-api/` é um projeto legado separado e está excluído do Git da raiz.
 
+## Publicação no GitHub Pages
+
+O workflow [deploy-pages.yml](../.github/workflows/deploy-pages.yml) publica automaticamente a aplicação quando há um push na branch `main`. No GitHub, configure Settings → Pages → Source: GitHub Actions uma única vez.
+
+Depois da publicação, a aplicação ficará disponível em:
+
+`https://erickcampos50.github.io/enem-provas-criador/`
+
+O workflow instala as dependências, executa os testes, sincroniza o `enem.sqlite` canônico da raiz e gera o artefato estático com o caminho-base correto. O banco e o WASM são carregados pelo subdiretório do projeto; nenhum arquivo de `enem-api/` participa do build.
+
+Para testar localmente o mesmo caminho-base do Pages:
+
+```bash
+VITE_BASE_PATH=/enem-provas-criador/ npm run build
+npm run preview:pages -- --host 127.0.0.1 --port 4173
+```
+
 ## PDF
 
 O botão principal **Baixar PDF** gera o arquivo diretamente no navegador, sem abrir a janela de impressão e sem depender das configurações de escala, margens ou cabeçalho do usuário.

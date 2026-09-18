@@ -14,7 +14,8 @@
     "sync:database": "node scripts/sync-database.mjs",
     "build:database": "node scripts/build-database.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "node tests/browser-smoke.mjs"
+    "test:browser": "node tests/browser-smoke.mjs",
+    "preview:pages": "node scripts/serve-pages.mjs"
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "3.53.4-build1",

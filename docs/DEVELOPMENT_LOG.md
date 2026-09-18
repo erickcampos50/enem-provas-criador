@@ -230,3 +230,16 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - Os botões de aluno, professor e pré-visualização baixam o PDF renderizado, sem popup e sem chamada de impressão.
 
 **Validação:** npm test (9 aprovados), npm run build e smoke test Chromium (downloads PDF reais com cabeçalho %PDF-, tamanho válido e páginas detectadas) aprovados.
+
+
+## 18/09/2026 — Publicação no GitHub Pages
+
+**Entregas:**
+
+- Adicionado o workflow .github/workflows/deploy-pages.yml, acionado por push na main ou manualmente, usando GitHub Actions Pages.
+- O Vite aceita VITE_BASE_PATH e calcula automaticamente o prefixo do repositório no Actions.
+- O cache do SQLite deixou de usar caminhos absolutos no domínio e passou a resolver manifesto e banco relativos a document.baseURI.
+- O build continua sincronizando o banco canônico da raiz; enem-api permanece fora do Git e fora do processo de publicação.
+- Adicionado preview:pages para testar localmente a aplicação em /enem-provas-criador/.
+
+**Validação:** npm test, build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test completo no subdiretório aprovados.

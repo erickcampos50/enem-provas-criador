@@ -1,28 +1,32 @@
 const CACHE_PREFIX = 'montador-enem:sqlite:';
 
+function assetUrl(filename) {
+  return new URL(filename, document.baseURI).toString();
+}
+
 async function responseBytes(response) {
   return response.arrayBuffer();
 }
 
 export async function loadDatabaseBytes() {
-  const manifestResponse = await fetch('/enem.sqlite.meta.json', { cache: 'no-cache' });
+  const manifestResponse = await fetch(assetUrl('enem.sqlite.meta.json'), { cache: 'no-cache' });
   if (!manifestResponse.ok) throw new Error('Manifesto do banco não encontrado. Execute o build de sincronização.');
   const manifest = await manifestResponse.json();
   const cacheName = `${CACHE_PREFIX}${manifest.sha256}`;
 
   if (!('caches' in globalThis)) {
-    const response = await fetch('/enem.sqlite', { cache: 'no-cache' });
+    const response = await fetch(assetUrl('enem.sqlite'), { cache: 'no-cache' });
     if (!response.ok) throw new Error('Não foi possível baixar o banco SQLite.');
     return { bytes: await responseBytes(response), manifest, cached: false };
   }
 
   const cache = await caches.open(cacheName);
-  let response = await cache.match('/enem.sqlite');
+  let response = await cache.match(assetUrl('enem.sqlite'));
   let cached = Boolean(response);
   if (!response) {
-    response = await fetch('/enem.sqlite', { cache: 'no-cache' });
+    response = await fetch(assetUrl('enem.sqlite'), { cache: 'no-cache' });
     if (!response.ok) throw new Error('Não foi possível baixar o banco SQLite.');
-    await cache.put('/enem.sqlite', response.clone());
+    await cache.put(assetUrl('enem.sqlite'), response.clone());
     cached = false;
   }
 
