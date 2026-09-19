@@ -80,6 +80,8 @@ try {
   await page.locator('.toast.show').filter({ hasText: 'Valor da prova calculado' }).waitFor({ state: 'visible', timeout: 5_000 });
   assert.match(await page.locator('#btn-print-student').innerText(), /Baixar prova em PDF/);
   assert.match(await page.locator('#btn-print-teacher').innerText(), /gabarito do professor/);
+  assert.equal(await page.locator('#btn-export-files').count(), 0);
+  assert.match(await page.locator('#btn-export-zip').innerText(), /Baixar versão ZIP/);
   await page.locator('#exam-preview-frame').waitFor({ state: 'visible', timeout: 30_000 });
   await page.frameLocator('#exam-preview-frame').locator('.exam-header').waitFor({ state: 'visible', timeout: 30_000 });
   assert.match(await page.locator('#preview-status').innerText(), /Variante A/);
@@ -151,6 +153,8 @@ try {
   assert.equal(questionSourceStyle.fontStyle, 'italic');
   assert.ok(questionSourceStyle.fontSize < 13);
   assert.equal(await printPopup.locator('.answer-sheet-table').count(), 1);
+  assert.equal(await printPopup.locator('.exam-instructions').count(), 0);
+  assert.doesNotMatch(await printPopup.locator('body').innerText(), /Leia atentamente|Marque apenas|Recorte ou arquive|Guarde esta folha/);
   assert.equal(await printPopup.locator('.answer-student-identification').count(), 1);
   assert.equal(await printPopup.locator('.page-footer').count(), 0);
   await printPopup.close();

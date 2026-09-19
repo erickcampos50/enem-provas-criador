@@ -63,7 +63,7 @@ O botão **Baixar prova em PDF** prepara a versão A4 e abre a impressão do nav
 - O documento usa uma folha A4 monocromática, com cabeçalho formal, folha de respostas e gabarito do professor.
 - A variante é identificada no cabeçalho da prova; não há faixa fixa sobre o conteúdo.
 - O navegador aguarda o carregamento das imagens antes de abrir a impressão; as URLs remotas permanecem preservadas.
-- HTML e Markdown continuam disponíveis como formatos auxiliares; o ZIP mantém esses arquivos.
+- A versão ZIP inclui os arquivos HTML e Markdown como formatos auxiliares.
 
 ## Salvar e compartilhar
 

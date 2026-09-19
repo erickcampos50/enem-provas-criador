@@ -39,6 +39,12 @@ test('contém imagens do preview dentro da área disponível', () => {
   assert.match(exportsSource, /\.exam-page img \{ display: block; box-sizing: border-box; width: auto; max-width: 100%; height: auto; \}/);
 });
 
+test('usa somente as instruções fornecidas pelo professor', () => {
+  const exportsSource = fs.readFileSync(new URL('../src/exports.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(exportsSource, /Leia atentamente cada questão|Marque apenas uma alternativa|Recorte ou arquive esta folha|Guarde esta folha como registro/);
+  assert.match(exportsSource, /header\.instructions[\s\S]*renderMarkdown\(header\.instructions\)/);
+});
+
 test('exibe a fonte da questão de forma discreta e sem repetir o identificador', () => {
   assert.equal(formatQuestionSource('Questão 42 - ENEM 2023'), 'ENEM 2023');
   assert.equal(formatQuestionSource('Banco externo'), 'Banco externo');

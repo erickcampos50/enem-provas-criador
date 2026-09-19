@@ -60,7 +60,6 @@ body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Hel
 .answer-student-field.answer-student-signature { grid-column: span 2; }
 .answer-student-label { display: block; color: #555; font-size: 7pt; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .answer-student-value { display: block; min-height: 6mm; padding-top: 1.5mm; border-bottom: 1px solid #555; font-weight: 700; }
-.answer-sheet-note { margin: 3mm 0; color: #444; font-size: 8.5pt; }
 .section-kicker { color: #555; font-size: 8pt; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .section-title { margin: 1mm 0 2mm; color: #222; font-size: 18pt; }
 .section-lead { margin: 0 0 5mm; color: #666; }
@@ -161,7 +160,7 @@ function questionHtml(question, number, teacher) {
   '</section>';
 }
 
-function answerSheet(header, variant, count) {
+function answerSheet(header, variant) {
   const field = (label, value, className = '') => '<div class="answer-student-field ' + className + '"><span class="answer-student-label">' + label + '</span><span class="answer-student-value">' + (value ? escapeHtml(value) : '&nbsp;') + '</span></div>';
   const rows = variant.questions.map((_, index) => {
     const cells = ['A', 'B', 'C', 'D', 'E'].map((letter) => '<td><span class="answer-bubble">' + letter + '</span></td>').join('');
@@ -170,9 +169,7 @@ function answerSheet(header, variant, count) {
   return '<section class="answer-sheet page-break">' +
     '<div class="answer-sheet-header"><div><div class="section-kicker">Documento do aluno</div><h2 class="section-title">Folha de respostas</h2><p class="answer-sheet-subtitle">' + headerValue(header.title || 'Avaliação') + ' · Variante ' + escapeHtml(variant.label) + '</p></div><div class="answer-sheet-variant">' + escapeHtml(variant.label) + '</div></div>' +
     '<div class="answer-student-identification">' + field('Nome completo', '', 'answer-student-name') + field('Matrícula / RA') + field('Turma', header.className) + field('Data', header.date) + field('Assinatura do aluno', '', 'answer-student-signature') + '</div>' +
-    '<p class="answer-sheet-note">Marque apenas uma alternativa por questão. Recorte ou arquive esta folha junto com a prova, conforme a orientação do professor.</p>' +
     '<table class="answer-sheet-table"><thead><tr><th>Questão</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th></tr></thead><tbody>' + rows + '</tbody></table>' +
-    '<p class="answer-sheet-note">' + count + ' questão(ões) · Guarde esta folha como registro da avaliação.</p>' +
   '</section>';
 }
 
@@ -205,13 +202,13 @@ function headerHtml(header, variant, teacher) {
     ['Questões', variant.questions.length + ' questão(ões)'],
   ].map(([label, value]) => '<div class="exam-meta-item"><span class="exam-meta-label">' + label + '</span><strong class="exam-meta-value">' + headerValue(value) + '</strong></div>').join('');
   const instructions = header.instructions
-    ? renderMarkdown(header.instructions)
-    : '<p>Leia atentamente cada questão e assinale somente uma alternativa. Revise suas respostas antes de entregar a prova.</p>';
+    ? '<div class="exam-instructions"><div class="exam-instructions-label">Orientações</div>' + renderMarkdown(header.instructions) + '</div>'
+    : '';
   return '<header class="exam-header">' +
     '<div class="exam-header-top"><div class="exam-brand"><span class="exam-brand-mark">AV</span><div><div class="exam-kicker">Instrumento de avaliação</div><h1 class="exam-title">' + headerValue(header.title || 'Avaliação') + '</h1><div class="exam-subtitle">' + headerValue(header.institution || 'Instituição de ensino') + '</div></div></div>' +
     '<div class="exam-variant"><span class="exam-variant-label">Variante</span><strong class="exam-variant-value">' + escapeHtml(variant.label) + '</strong></div></div>' +
     '<div class="exam-meta-grid">' + metadata + '</div>' +
-    '<div class="exam-instructions"><div class="exam-instructions-label">Orientações</div>' + instructions + '</div>' +
+    instructions +
   '</header>' + (teacher ? '' : studentIdentification(header));
 }
 
@@ -233,7 +230,7 @@ function answerKeyHtml(variant) {
 export function renderHtmlDocument(header, variant, teacher, includeAnswerSheet) {
   const questions = variant.questions.map((question, index) => questionHtml(question, index + 1, teacher)).join('');
   const key = teacher ? answerKeyHtml(variant) : '';
-  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + escapeHtml(header.title || 'Avaliação') + ' — Variante ' + escapeHtml(variant.label) + '</title><style>' + PRINT_CSS + '</style></head><body><main class="exam-page">' + headerHtml(header, variant, teacher) + questions + (includeAnswerSheet ? answerSheet(header, variant, variant.questions.length) : '') + key + '</main></body></html>';
+  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + escapeHtml(header.title || 'Avaliação') + ' — Variante ' + escapeHtml(variant.label) + '</title><style>' + PRINT_CSS + '</style></head><body><main class="exam-page">' + headerHtml(header, variant, teacher) + questions + (includeAnswerSheet ? answerSheet(header, variant) : '') + key + '</main></body></html>';
 }
 
 export function renderMarkdownDocument(header, variant, teacher, includeAnswerSheet) {

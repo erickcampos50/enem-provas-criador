@@ -305,3 +305,15 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - O viewport do preview passou a ocultar apenas transbordamento horizontal acidental, mantendo a rolagem vertical para conferência da prova.
 
 **Validação:** npm test (14 aprovados), build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test Chromium no subdiretório do GitHub Pages aprovados.
+
+
+## 19/09/2026 — Instruções do professor e exportação ZIP
+
+**Entregas:**
+
+- Removidas as instruções padrão da folha de respostas e do cabeçalho da prova. Quando o campo Instruções para os alunos estiver vazio, nenhuma orientação textual é inserida automaticamente; quando preenchido, o conteúdo do professor é exibido.
+- Removidas as notas fixas sobre marcar alternativas, recortar, arquivar ou guardar a folha de respostas.
+- Removido o botão Exportar HTML e Markdown da interface. Esses formatos continuam dentro do arquivo ZIP.
+- Renomeado o botão para Baixar versão ZIP e atualizado o feedback após a geração.
+
+**Validação:** npm test, build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test Chromium aprovados.
