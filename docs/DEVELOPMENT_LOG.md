@@ -270,3 +270,12 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - O cálculo de páginas foi ajustado para considerar a nova margem superior.
 
 **Validação:** npm test (9 aprovados), build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test completo diretamente sobre docs/ aprovados.
+
+
+## 19/09/2026 — Faixa de paginação removida da impressão
+
+**Motivo:** a linha horizontal com variante e número de página interferia no conteúdo e repetia informações já presentes no cabeçalho e na identificação da prova.
+
+**Correção:** removidos o rodapé fixo, o cálculo de páginas e seus estilos da pré-visualização e da impressão. A prova mantém somente os cabeçalhos e identificações já existentes.
+
+**Validação:** `npm test`, build com `VITE_BASE_PATH=/enem-provas-criador/` e smoke test do navegador aprovados.

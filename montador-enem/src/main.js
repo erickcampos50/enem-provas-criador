@@ -287,7 +287,6 @@ function renderPreview() {
   frame.onload = async () => {
     try {
       await waitForPrintImages(frame.contentWindow);
-      setPrintPageCount(frame.contentWindow);
       const contentHeight = frame.contentDocument?.documentElement?.scrollHeight ?? 0;
       frame.style.height = Math.max(760, Math.min(contentHeight + 24, 1800)) + "px";
     } catch {
@@ -313,27 +312,6 @@ function moveSelected(id, direction) {
 function fillHeader() {
   Object.entries(state.header).forEach(([key, value]) => $(`[data-header="${key}"]`).val(value));
   $('#variants-count').val(state.variantsCount); $('#shuffle-incorrect').prop('checked', state.shuffleIncorrect); $('#include-answer-sheet').prop('checked', state.includeAnswerSheet);
-}
-
-function setPrintPageCount(printWindow) {
-  const printDocument = printWindow.document;
-  const pageRoot = printDocument.querySelector(".exam-page");
-  if (!pageRoot) return;
-  const html = printDocument.documentElement;
-  html.classList.add("print-measure");
-  const pageHeight = (297 / 25.4) * 96;
-  const verticalMargins = ((18 + 15) / 25.4) * 96;
-  const printableHeight = pageHeight - verticalMargins;
-  const rootRect = pageRoot.getBoundingClientRect();
-  const breakStarts = [...printDocument.querySelectorAll(".page-break")].map((element) => element.getBoundingClientRect().top);
-  const boundaries = [rootRect.top, ...breakStarts, rootRect.bottom];
-  let total = 0;
-  for (let index = 0; index < boundaries.length - 1; index += 1) {
-    const segmentHeight = Math.max(1, boundaries[index + 1] - boundaries[index]);
-    total += Math.max(1, Math.ceil(segmentHeight / printableHeight));
-  }
-  html.classList.remove("print-measure");
-  printDocument.querySelectorAll(".page-total").forEach((element) => { element.textContent = String(Math.max(1, total)); });
 }
 
 function waitForPrintImages(printWindow) {
@@ -375,7 +353,6 @@ function printWithFrame(html) {
       frame.remove();
     };
     await waitForPrintImages(frameWindow);
-    setPrintPageCount(frameWindow);
     frameWindow.addEventListener('afterprint', cleanup, { once: true });
     frameWindow.focus();
     frameWindow.print();
@@ -403,7 +380,6 @@ function openPrint(teacher, variantIndex = 0) {
     popup.focus();
     const printPopup = async () => {
       await waitForPrintImages(popup);
-      setPrintPageCount(popup);
       popup.focus();
       popup.print();
     };

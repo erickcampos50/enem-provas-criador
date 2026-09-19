@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { getUniqueQuestionFiles } from '../src/exports.js';
+import { formatQuestionSource, getUniqueQuestionFiles } from '../src/exports.js';
 
 const contextImage = 'https://example.test/context.png';
 const extraImage = 'https://example.test/extra.png';
@@ -29,4 +29,10 @@ test('mantém o alinhamento das alternativas no preview e na impressão', () => 
   const exportsSource = fs.readFileSync(new URL('../src/exports.js', import.meta.url), 'utf8');
   assert.match(styles, /\.question-preview \.alternative \{ display: flex; align-items: flex-start;/);
   assert.match(exportsSource, /\.alternative \{ display: flex; align-items: flex-start;/);
+});
+
+
+test('exibe a fonte da questão de forma discreta e sem repetir o identificador', () => {
+  assert.equal(formatQuestionSource('Questão 42 - ENEM 2023'), 'ENEM 2023');
+  assert.equal(formatQuestionSource('Banco externo'), 'Banco externo');
 });

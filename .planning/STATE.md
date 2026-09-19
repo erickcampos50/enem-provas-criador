@@ -14,7 +14,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 - **Fase ativa:** manutenção incremental; nenhuma fase bloqueia o uso da primeira versão.
 - **Status:** implementação inicial concluída com testes automatizados e smoke test de navegador.
 - **Progresso:** 5/5 áreas implementadas; a coleta contra API real permanece uma operação controlada futura.
-- **Última atividade:** 19/09/2026 — impressão do navegador restaurada e marcador de variante/página movido para uma faixa superior reservada.
+- **Última atividade:** 19/09/2026 — faixa de variante e paginação removida da impressão para evitar interferência no layout.
 - **Próxima ação recomendada:** executar uma coleta real em janela controlada, usando `npm run build:database`, somente quando houver autorização para atualizar o banco canônico.
 
 ## Decisões vigentes
@@ -65,6 +65,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 | 18/09/2026 | Publicação no GitHub Pages | Workflow, base do Vite, cache do SQLite e preview em subdiretório validados |
 | 19/09/2026 | Artefato publicado em docs/ | Build gera index, assets, WASM, manifesto e SQLite diretamente na pasta padrão do Pages |
 | 19/09/2026 | Impressão restaurada | PDF direto removido; marcador de variante/página separado do conteúdo para evitar sobreposição |
+| 19/09/2026 | Rodapé de impressão removido | Faixa com variante, paginação e linha horizontal removida; essas informações já aparecem no cabeçalho da prova |
 
 ## 18/09/2026 — PDF renderizado com layout fixo
 

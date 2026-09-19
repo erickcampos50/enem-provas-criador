@@ -33,8 +33,8 @@ body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Hel
 .exam-question { break-inside: avoid; margin: 0 0 7mm; padding: 0 0 5mm; border-bottom: 1px solid #d2d2d2; }
 .question-heading { display: flex; align-items: center; gap: 4mm; margin-bottom: 4mm; }
 .question-index { display: grid; place-items: center; flex: 0 0 12mm; height: 12mm; border-radius: 3px; background: #222; color: #fff; font-size: 14pt; font-weight: 800; }
-.question-label { color: #555; font-size: 7.5pt; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
-.question-source { margin-top: 1mm; color: #444; font-size: 11pt; font-weight: 700; }
+.question-heading-meta { min-width: 0; }
+.question-source { margin: 0; color: #777; font-size: 8.5pt; font-style: italic; font-weight: 400; line-height: 1.25; }
 .question-points { margin-left: auto; padding: 1.5mm 3mm; border: 1px solid #bdbdbd; border-radius: 999px; color: #666; font-size: 8pt; white-space: nowrap; }
 .question-context, .alternatives-introduction { margin-bottom: 3mm; }
 .question-context p, .alternatives-introduction p { margin: 0 0 2.5mm; }
@@ -77,13 +77,6 @@ body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Hel
 .answer-key-points { color: #666; }
 .answer-key-total { display: flex; justify-content: flex-end; gap: 8mm; margin-top: 5mm; padding: 4mm 5mm; border: 1px solid #555; background: #f5f5f5; color: #222; font-weight: 800; }
 table { width: 100%; table-layout: fixed; font-size: 9pt; }
-.page-footer { display: flex; justify-content: space-between; margin-top: 8mm; padding-top: 2mm; border-top: 1px solid #aaa; color: #555; font-size: 8pt; }
-@media print { .page-footer { position: fixed; top: 3mm; right: 0; left: 0; z-index: 10; margin: 0; padding: 0 0 2mm; border-top: 0; border-bottom: 1px solid #aaa; background: #fff; } }
-.page-current-counter::after { content: counter(page); }
-@media print { .page-current-fallback { display: none; } }
-html.print-measure body { padding: 0 !important; background: #fff !important; }
-html.print-measure .exam-page { width: 180mm !important; max-width: 180mm !important; padding: 0 !important; box-shadow: none !important; }
-html.print-measure .page-break { break-before: auto !important; page-break-before: auto !important; }
 thead { display: table-header-group; }
 .answer-sheet-table th, .answer-sheet-table td { padding: 1.7mm 1.5mm; }
 @media print { body { background: #fff; } .exam-page { max-width: none; } .exam-header { box-shadow: none; } }
@@ -130,6 +123,13 @@ export function getUniqueQuestionFiles(question) {
   });
 }
 
+export function formatQuestionSource(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/^quest[aã]o\s+\d+\s*(?:[-–—:]\s*)?/i, '')
+    .trim();
+}
+
 function questionHtml(question, number, teacher) {
   const alternatives = (question.alternatives ?? []).map((alternative) => {
     const alternativeFile = alternative.file ?? alternative.fileUrl;
@@ -146,11 +146,12 @@ function questionHtml(question, number, teacher) {
   }).join('');
   const files = getUniqueQuestionFiles(question).map((url, index) => imageMarkup(url, 'Imagem de apoio ' + (index + 1))).join('');
   const points = formatPoints(question.points ?? 1);
+  const source = formatQuestionSource(question.title);
+  const sourceMarkup = source ? '<div class="question-source">(' + escapeHtml(source) + ')</div>' : '';
   return '<section class="exam-question">' +
     '<div class="question-heading">' +
       '<span class="question-index">' + String(number).padStart(2, '0') + '</span>' +
-      '<div><div class="question-label">Questão ' + String(number).padStart(2, '0') + '</div>' +
-      '<div class="question-source">' + escapeHtml(question.title) + '</div></div>' +
+      '<div class="question-heading-meta">' + sourceMarkup + '</div>' +
       '<span class="question-points">' + points + ' ponto' + (Number(question.points ?? 1) === 1 ? '' : 's') + '</span>' +
     '</div>' +
     '<div class="question-context">' + renderMarkdown(question.context) + '</div>' + files +
@@ -227,14 +228,10 @@ function answerKeyHtml(variant) {
     '<div class="answer-key-total"><span>Total de questões: ' + items.length + '</span><span>Total de pontos: ' + formatPoints(total) + '</span></div></section>';
 }
 
-function pageFooter(variant) {
-  return '<footer class="page-footer"><span>Variante ' + escapeHtml(variant.label) + '</span><span>Página <span class="page-current-fallback">1</span><span class="page-current-counter" aria-hidden="true"></span> de <span class="page-total">1</span></span></footer>';
-}
-
 export function renderHtmlDocument(header, variant, teacher, includeAnswerSheet) {
   const questions = variant.questions.map((question, index) => questionHtml(question, index + 1, teacher)).join('');
   const key = teacher ? answerKeyHtml(variant) : '';
-  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + escapeHtml(header.title || 'Avaliação') + ' — Variante ' + escapeHtml(variant.label) + '</title><style>' + PRINT_CSS + '</style></head><body><main class="exam-page">' + headerHtml(header, variant, teacher) + questions + (includeAnswerSheet ? answerSheet(header, variant, variant.questions.length) : '') + key + '</main>' + pageFooter(variant) + '</body></html>';
+  return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + escapeHtml(header.title || 'Avaliação') + ' — Variante ' + escapeHtml(variant.label) + '</title><style>' + PRINT_CSS + '</style></head><body><main class="exam-page">' + headerHtml(header, variant, teacher) + questions + (includeAnswerSheet ? answerSheet(header, variant, variant.questions.length) : '') + key + '</main></body></html>';
 }
 
 export function renderMarkdownDocument(header, variant, teacher, includeAnswerSheet) {

@@ -96,10 +96,19 @@ try {
   await printPopup.waitForLoadState('domcontentloaded');
   assert.match(await printPopup.title(), /Avaliação|Variante/);
   assert.equal(await printPopup.locator('.exam-header').count(), 1);
+  assert.equal(await printPopup.locator('.question-label').count(), 0);
+  const questionSource = await printPopup.locator('.question-source').first().innerText();
+  assert.match(questionSource, /^\(.+\)$/);
+  assert.doesNotMatch(questionSource, /^\(Questão\b/i);
+  const questionSourceStyle = await printPopup.locator('.question-source').first().evaluate((element) => {
+    const style = getComputedStyle(element);
+    return { fontStyle: style.fontStyle, fontSize: Number.parseFloat(style.fontSize), color: style.color };
+  });
+  assert.equal(questionSourceStyle.fontStyle, 'italic');
+  assert.ok(questionSourceStyle.fontSize < 13);
   assert.equal(await printPopup.locator('.answer-sheet-table').count(), 1);
   assert.equal(await printPopup.locator('.answer-student-identification').count(), 1);
-  assert.equal(await printPopup.locator('.page-footer').count(), 1);
-  assert.match(await printPopup.locator('.page-total').innerText(), /^\d+$/);
+  assert.equal(await printPopup.locator('.page-footer').count(), 0);
   await printPopup.close();
 
   const teacherPopupPromise = page.waitForEvent('popup');
@@ -108,8 +117,7 @@ try {
   await teacherPopup.waitForLoadState('domcontentloaded');
   assert.equal(await teacherPopup.locator('.answer-key-table').count(), 1);
   assert.equal(await teacherPopup.locator('.answer-key-total').count(), 1);
-  assert.equal(await teacherPopup.locator('.page-footer').count(), 1);
-  assert.match(await teacherPopup.locator('.page-total').innerText(), /^\d+$/);
+  assert.equal(await teacherPopup.locator('.page-footer').count(), 0);
   await teacherPopup.close();
 } finally {
   await browser.close();
