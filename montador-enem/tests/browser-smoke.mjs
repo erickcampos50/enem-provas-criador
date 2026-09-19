@@ -1,24 +1,10 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { readFile } from 'node:fs/promises';
 
 const baseUrl = process.env.MONTADOR_TEST_URL || 'http://127.0.0.1:4173';
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage();
 const errors = [];
-async function assertPdfDownload(page, selector, filename) {
-  const downloadPromise = page.waitForEvent('download');
-  await page.locator(selector).click();
-  const download = await downloadPromise;
-  assert.equal(download.suggestedFilename(), filename);
-  const path = await download.path();
-  assert.ok(path, 'O download do PDF não possui caminho temporário.');
-  const bytes = await readFile(path);
-  assert.equal(bytes.subarray(0, 5).toString(), '%PDF-');
-  assert.ok(bytes.length > 10_000, 'O PDF renderizado ficou menor que o esperado.');
-  assert.ok((bytes.toString('latin1').match(/\/Type \/Page\b/g) || []).length >= 1, 'O PDF não possui páginas.');
-}
-
 
 page.on('pageerror', (error) => errors.push(error));
 page.on('console', (message) => {
@@ -69,7 +55,12 @@ try {
   await page.locator('#variants-count').selectOption('2');
   await page.locator('#preview-variant').selectOption('1');
   assert.equal(await page.frameLocator('#exam-preview-frame').locator('.exam-variant-value').innerText(), 'B');
-  await assertPdfDownload(page, '#btn-preview-pdf', 'prova-variante-B-aluno.pdf');
+  const previewPdfPopupPromise = page.waitForEvent('popup');
+  await page.locator('#btn-preview-pdf').click();
+  const previewPdfPopup = await previewPdfPopupPromise;
+  await previewPdfPopup.waitForLoadState('domcontentloaded');
+  assert.equal(await previewPdfPopup.locator('.exam-variant-value').innerText(), 'B');
+  await previewPdfPopup.close();
   await page.locator('#preview-variant').selectOption('0');
 
   await page.locator('[data-preview-id]').first().click();
@@ -99,8 +90,27 @@ try {
   const backupDownload = await backupDownloadPromise;
   assert.equal(backupDownload.suggestedFilename(), 'prova-enem-backup.json');
 
-  await assertPdfDownload(page, '#btn-print-student', 'prova-variante-A-aluno.pdf');
-  await assertPdfDownload(page, '#btn-print-teacher', 'prova-variante-A-professor.pdf');
+  const printPopupPromise = page.waitForEvent('popup');
+  await page.locator('#btn-print-student').click();
+  const printPopup = await printPopupPromise;
+  await printPopup.waitForLoadState('domcontentloaded');
+  assert.match(await printPopup.title(), /Avaliação|Variante/);
+  assert.equal(await printPopup.locator('.exam-header').count(), 1);
+  assert.equal(await printPopup.locator('.answer-sheet-table').count(), 1);
+  assert.equal(await printPopup.locator('.answer-student-identification').count(), 1);
+  assert.equal(await printPopup.locator('.page-footer').count(), 1);
+  assert.match(await printPopup.locator('.page-total').innerText(), /^\d+$/);
+  await printPopup.close();
+
+  const teacherPopupPromise = page.waitForEvent('popup');
+  await page.locator('#btn-print-teacher').click();
+  const teacherPopup = await teacherPopupPromise;
+  await teacherPopup.waitForLoadState('domcontentloaded');
+  assert.equal(await teacherPopup.locator('.answer-key-table').count(), 1);
+  assert.equal(await teacherPopup.locator('.answer-key-total').count(), 1);
+  assert.equal(await teacherPopup.locator('.page-footer').count(), 1);
+  assert.match(await teacherPopup.locator('.page-total').innerText(), /^\d+$/);
+  await teacherPopup.close();
 } finally {
   await browser.close();
 }

@@ -58,17 +58,14 @@ npm run preview:pages -- --host 127.0.0.1 --port 4173
 
 ## PDF
 
-O botão principal **Baixar PDF** gera o arquivo diretamente no navegador, sem abrir a janela de impressão e sem depender das configurações de escala, margens ou cabeçalho do usuário.
+O botão **Baixar PDF** prepara a versão A4 e abre a impressão do navegador. Escolha **Salvar como PDF** no destino da impressão.
 
-- O documento é renderizado em A4 retrato com área útil fixa de 180 mm.
-- As margens usadas no arquivo são 15 mm à esquerda/direita, 13 mm no topo e 20 mm na base.
-- Cabeçalhos, questões, figuras, folha de respostas e gabarito respeitam quebras de página controladas; figuras são limitadas à largura útil e a 72 mm de altura para não empurrar o conteúdo para fora da área imprimível.
-- Cada página recebe no próprio PDF o rodapé **Variante X · Página Y de Z**.
-- As imagens continuam referenciadas pelas URLs remotas. O renderizador aguarda o carregamento delas e usa CORS quando o servidor da imagem permite.
+- O documento usa uma folha A4 monocromática, com cabeçalho formal, folha de respostas e gabarito do professor.
+- O marcador de variante e página fica em uma faixa reservada no alto da folha, fora do fluxo do cabeçalho e das questões.
+- O navegador aguarda o carregamento das imagens antes de abrir a impressão; as URLs remotas permanecem preservadas.
 - HTML e Markdown continuam disponíveis como formatos auxiliares; o ZIP mantém esses arquivos.
 
-A impressão do PDF fica a cargo do visualizador de PDF, mas o arquivo já está paginado e não requer que o usuário corrija as opções de impressão do navegador.
-
+A pré-visualização usa o mesmo HTML/CSS da impressão para permitir a conferência antes de abrir a janela de impressão.
 ## Prévia dos resultados
 
 Os cards da biblioteca exibem um trecho textual montado a partir do contexto, da introdução das alternativas e das alternativas da questão. A prévia remove imagens Markdown/HTML e reserva espaço visual para três linhas, mesmo quando o conteúdo é curto. A paginação consulta primeiro os 20 registros da página e só depois calcula snippets e imagens no SQLite local.

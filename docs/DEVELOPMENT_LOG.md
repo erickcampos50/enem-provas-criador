@@ -255,3 +255,18 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - O servidor preview:pages foi ajustado para servir o conteúdo de docs/ no subdiretório do projeto.
 
 **Validação:** npm test, build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test completo diretamente sobre docs/ aprovados.
+
+
+## 19/09/2026 — Impressão do navegador restaurada
+
+**Motivo:** o PDF renderizado diretamente com jsPDF/html2canvas apresentou qualidade visual inferior à impressão nativa do navegador.
+
+**Correção:**
+
+- Removidos o módulo pdf.js e as dependências jspdf/html2canvas.
+- Restaurado o fluxo anterior com janela de impressão e fallback por iframe.
+- A margem superior A4 passou para 18 mm e o marcador de variante/página foi retirado da posição fixa inferior, que podia sobrepor conteúdo.
+- O marcador agora ocupa uma faixa fixa no alto da página durante a impressão; na pré-visualização ele permanece no fluxo normal.
+- O cálculo de páginas foi ajustado para considerar a nova margem superior.
+
+**Validação:** npm test (9 aprovados), build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test completo diretamente sobre docs/ aprovados.

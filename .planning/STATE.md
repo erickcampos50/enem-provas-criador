@@ -14,7 +14,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 - **Fase ativa:** manutenção incremental; nenhuma fase bloqueia o uso da primeira versão.
 - **Status:** implementação inicial concluída com testes automatizados e smoke test de navegador.
 - **Progresso:** 5/5 áreas implementadas; a coleta contra API real permanece uma operação controlada futura.
-- **Última atividade:** 19/09/2026 — artefato de publicação movido para docs/, build e smoke test aprovados diretamente nessa pasta.
+- **Última atividade:** 19/09/2026 — impressão do navegador restaurada e marcador de variante/página movido para uma faixa superior reservada.
 - **Próxima ação recomendada:** executar uma coleta real em janela controlada, usando `npm run build:database`, somente quando houver autorização para atualizar o banco canônico.
 
 ## Decisões vigentes
@@ -64,6 +64,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 | 18/09/2026 | PDF renderizado com layout fixo | PDF A4 direto, margens fixas, paginação e rodapé por página validados no Chromium |
 | 18/09/2026 | Publicação no GitHub Pages | Workflow, base do Vite, cache do SQLite e preview em subdiretório validados |
 | 19/09/2026 | Artefato publicado em docs/ | Build gera index, assets, WASM, manifesto e SQLite diretamente na pasta padrão do Pages |
+| 19/09/2026 | Impressão restaurada | PDF direto removido; marcador de variante/página separado do conteúdo para evitar sobreposição |
 
 ## 18/09/2026 — PDF renderizado com layout fixo
 
@@ -78,4 +79,4 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 **Validação:** npm test, npm run build e smoke test do navegador aprovados.
 
 ---
-*Última atualização: 19/09/2026, após a validação do artefato em docs/.*
+*Última atualização: 19/09/2026, após a validação da impressão restaurada.*

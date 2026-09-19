@@ -3,7 +3,7 @@ import { renderMarkdown } from './markdown.js';
 import { buildAnswerKey } from './variants.js';
 
 const PRINT_CSS = `
-@page { size: A4 portrait; margin: 13mm 15mm 15mm; }
+@page { size: A4 portrait; margin: 18mm 15mm 15mm; }
 :root { color-scheme: light; }
 * { box-sizing: border-box; }
 body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Helvetica, sans-serif; orphans: 3; widows: 3; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
@@ -77,7 +77,8 @@ body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Hel
 .answer-key-points { color: #666; }
 .answer-key-total { display: flex; justify-content: flex-end; gap: 8mm; margin-top: 5mm; padding: 4mm 5mm; border: 1px solid #555; background: #f5f5f5; color: #222; font-weight: 800; }
 table { width: 100%; table-layout: fixed; font-size: 9pt; }
-.page-footer { position: fixed; right: 0; bottom: -9mm; left: 0; display: flex; justify-content: space-between; padding-top: 2mm; border-top: 1px solid #aaa; color: #555; font-size: 8pt; }
+.page-footer { display: flex; justify-content: space-between; margin-top: 8mm; padding-top: 2mm; border-top: 1px solid #aaa; color: #555; font-size: 8pt; }
+@media print { .page-footer { position: fixed; top: 3mm; right: 0; left: 0; z-index: 10; margin: 0; padding: 0 0 2mm; border-top: 0; border-bottom: 1px solid #aaa; background: #fff; } }
 .page-current-counter::after { content: counter(page); }
 @media print { .page-current-fallback { display: none; } }
 html.print-measure body { padding: 0 !important; background: #fff !important; }
