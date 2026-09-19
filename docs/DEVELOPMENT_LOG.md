@@ -293,3 +293,15 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - A área Gerar a prova e exportar explica variantes, deslocamento da correta, embaralhamento determinístico das incorretas e folha de respostas. Os rótulos agora destacam Baixar prova em PDF e Baixar gabarito do professor.
 
 **Validação:** npm test (13 aprovados), build com VITE_BASE_PATH=/enem-provas-criador/ e MONTADOR_TEST_URL=http://127.0.0.1:4173/enem-provas-criador/ npm run test:browser aprovados.
+
+
+## 19/09/2026 — Pontuação, valor da prova e imagens no preview
+
+**Entregas:**
+
+- Os campos de pontos das questões deixaram de usar input number, removendo os controles de incremento por clique. Eles agora aceitam somente edição textual, com teclado decimal e suporte a vírgula como separador.
+- O campo Valor da prova ganhou um botão compacto com ícone Σ, acessível por título e aria-label, que soma os pontos atuais quando o professor quiser. O campo continua editável manualmente.
+- A pré-visualização passou a aplicar contenção explícita às imagens do documento interno: largura automática, altura automática, largura máxima de 100% e contêineres com largura mínima controlada. O limite A4 da exportação permanece preservado.
+- O viewport do preview passou a ocultar apenas transbordamento horizontal acidental, mantendo a rolagem vertical para conferência da prova.
+
+**Validação:** npm test (14 aprovados), build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test Chromium no subdiretório do GitHub Pages aprovados.

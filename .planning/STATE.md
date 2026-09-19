@@ -14,7 +14,7 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 - **Fase ativa:** manutenção incremental; nenhuma fase bloqueia o uso da primeira versão.
 - **Status:** implementação inicial concluída com testes automatizados e smoke test de navegador.
 - **Progresso:** 5/5 áreas implementadas; a coleta contra API real permanece uma operação controlada futura.
-- **Última atividade:** 19/09/2026 — comunicação visual, restauração automática do rascunho e identidade Apple-like atualizadas; testes completos aprovados.
+- **Última atividade:** 19/09/2026 — edição textual de pontuação, cálculo opcional do valor da prova e contenção horizontal das imagens do preview atualizados; testes completos aprovados.
 - **Próxima ação recomendada:** executar uma coleta real em janela controlada, usando `npm run build:database`, somente quando houver autorização para atualizar o banco canônico.
 
 ## Decisões vigentes
@@ -65,7 +65,9 @@ Consulte [.planning/PROJECT.md](/home/erick/enem-provas-criador/.planning/PROJEC
 | 18/09/2026 | Publicação no GitHub Pages | Workflow, base do Vite, cache do SQLite e preview em subdiretório validados |
 | 19/09/2026 | Artefato publicado em docs/ | Build gera index, assets, WASM, manifesto e SQLite diretamente na pasta padrão do Pages |
 | 19/09/2026 | Impressão restaurada | PDF direto removido; marcador de variante/página separado do conteúdo para evitar sobreposição |
-| 19/09/2026 | Rodapé de impressão removido | Faixa com variante, paginação e linha horizontal removida; essas informações já aparecem no cabeçalho da prova |\n| 19/09/2026 | Comunicação visual e autosalvamento | Identidade para professores, badge com questões/provas, explicação expandível, modal de salvar/compartilhar, link de composição e restauração automática do rascunho validados no smoke test |
+| 19/09/2026 | Rodapé de impressão removido | Faixa com variante, paginação e linha horizontal removida; essas informações já aparecem no cabeçalho da prova |
+| 19/09/2026 | Comunicação visual e autosalvamento | Identidade para professores, badge com questões/provas, explicação expandível, modal de salvar/compartilhar, link de composição e restauração automática do rascunho validados no smoke test |
+| 19/09/2026 | Pontuação e imagens no preview | Pontos editáveis somente por digitação, cálculo opcional do valor total e imagens do iframe contidas horizontalmente; 14 testes e smoke test aprovados |
 
 ## 18/09/2026 — PDF renderizado com layout fixo
 

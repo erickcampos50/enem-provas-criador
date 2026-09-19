@@ -69,6 +69,15 @@ try {
   assert.match(await page.locator('#variants-help').innerText(), /ordem de alternativas/);
   assert.match(await page.locator('#shuffle-help').innerText(), /alternativas erradas/);
   assert.match(await page.locator('#answer-sheet-help').innerText(), /folha compacta/);
+  const pointsInput = page.locator('#selected-list .selected-points').first();
+  assert.equal(await pointsInput.getAttribute('type'), 'text');
+  assert.equal(await pointsInput.getAttribute('inputmode'), 'decimal');
+  await pointsInput.fill('2,5');
+  await pointsInput.blur();
+  await page.locator('#total-points').filter({ hasText: '2.5' }).waitFor({ state: 'visible' });
+  await page.locator('#btn-calculate-value').click();
+  assert.equal(await page.locator('#header-totalValue').inputValue(), '2,5');
+  await page.locator('.toast.show').filter({ hasText: 'Valor da prova calculado' }).waitFor({ state: 'visible', timeout: 5_000 });
   assert.match(await page.locator('#btn-print-student').innerText(), /Baixar prova em PDF/);
   assert.match(await page.locator('#btn-print-teacher').innerText(), /gabarito do professor/);
   await page.locator('#exam-preview-frame').waitFor({ state: 'visible', timeout: 30_000 });

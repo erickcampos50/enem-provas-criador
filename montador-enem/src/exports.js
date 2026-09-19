@@ -46,7 +46,9 @@ body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Hel
 .alternative-letter { display: grid; place-items: center; flex: 0 0 7mm; height: 7mm; border: 1px solid #222; border-radius: 50%; color: #222; font-weight: 800; }
 .correct-tag { display: inline-block; margin-top: 1.5mm; padding: .75mm 2mm; border-radius: 999px; background: #e8e8e8; color: #222; font-size: 7pt; font-weight: 800; text-transform: uppercase; }
 .teacher-answer { border-color: #777; background: #f1f1f1; }
-.question-image { display: block; max-width: 100%; max-height: 88mm; object-fit: contain; margin: 4mm auto; }
+.exam-question, .question-context, .alternatives-introduction, .alternative, .alternative > div { min-width: 0; max-width: 100%; }
+.exam-page img { display: block; box-sizing: border-box; width: auto; max-width: 100%; height: auto; }
+.question-image { display: block; width: auto; max-width: 100%; max-height: 88mm; object-fit: contain; margin: 4mm auto; }
 .page-break { break-before: page; page-break-before: always; }
 .answer-sheet, .answer-key { padding-top: 2mm; }
 .answer-sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8mm; padding-bottom: 3mm; border-bottom: 2px solid #222; }
