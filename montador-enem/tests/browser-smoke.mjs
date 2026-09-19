@@ -11,10 +11,24 @@ page.on('console', (message) => {
   if (message.type() === 'error') errors.push(new Error(message.text()));
 });
 
+await page.addInitScript(() => {
+  if (!sessionStorage.getItem('__montador_smoke_initialized')) {
+    localStorage.clear();
+    sessionStorage.setItem('__montador_smoke_initialized', '1');
+  }
+});
+
 try {
   await page.goto(baseUrl, { waitUntil: 'networkidle' });
   await page.locator('#db-status.bg-success').waitFor({ state: 'visible', timeout: 30_000 });
-  assert.match(await page.locator('#db-status').innerText(), /Banco/);
+  assert.match(await page.locator('#db-status').innerText(), /^2\.757 questões · 15 provas$/);
+  assert.match(await page.locator('h1').first().innerText(), /Provas ENEM para Professores/);
+  assert.equal(await page.locator('#welcome-notice').count(), 1);
+  await page.locator('#welcome-notice summary').click();
+  assert.equal(await page.locator('#welcome-notice').getAttribute('open'), '');
+  await page.locator('#btn-dismiss-welcome').click();
+  assert.equal(await page.locator('#welcome-notice').evaluate((element) => element.classList.contains('d-none')), true);
+  assert.equal(await page.evaluate(() => localStorage.getItem('montador-enem:welcome-dismissed:v1')), '1');
   await page.locator(".question-result").first().waitFor({ state: "visible", timeout: 30_000 });
   const initialSnippets = await page.locator(".result-snippet").allInnerTexts();
   assert.ok(initialSnippets.length > 0);
@@ -41,11 +55,22 @@ try {
   await page.locator('#search-form button[type="submit"]').click();
   await page.locator('.question-result').first().waitFor({ state: 'visible', timeout: 30_000 });
   assert.match(await page.locator('#result-count').innerText(), /questão/);
+  await page.locator('.toast.show').filter({ hasText: 'Busca concluída' }).waitFor({ state: 'visible', timeout: 5_000 });
 
   await page.locator('.question-select').first().check();
   await page.locator('#selected-count').filter({ hasText: '1' }).waitFor({ state: 'visible' });
   assert.equal(await page.locator('#selected-count').innerText(), '1');
-
+  const selectedQuestionId = Number(await page.locator('.question-select:checked').first().getAttribute('data-question-id'));
+  await page.locator('.toast.show').filter({ hasText: 'Questão adicionada' }).waitFor({ state: 'visible', timeout: 5_000 });
+  await page.locator('#draft-status').filter({ hasText: 'Salvo neste navegador' }).waitFor({ state: 'visible', timeout: 5_000 });
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.locator('#db-status.bg-success').waitFor({ state: 'visible', timeout: 30_000 });
+  await page.locator('#selected-count').filter({ hasText: '1' }).waitFor({ state: 'visible', timeout: 30_000 });
+  assert.match(await page.locator('#variants-help').innerText(), /ordem de alternativas/);
+  assert.match(await page.locator('#shuffle-help').innerText(), /alternativas erradas/);
+  assert.match(await page.locator('#answer-sheet-help').innerText(), /folha compacta/);
+  assert.match(await page.locator('#btn-print-student').innerText(), /Baixar prova em PDF/);
+  assert.match(await page.locator('#btn-print-teacher').innerText(), /gabarito do professor/);
   await page.locator('#exam-preview-frame').waitFor({ state: 'visible', timeout: 30_000 });
   await page.frameLocator('#exam-preview-frame').locator('.exam-header').waitFor({ state: 'visible', timeout: 30_000 });
   assert.match(await page.locator('#preview-status').innerText(), /Variante A/);
@@ -85,10 +110,20 @@ try {
   const zipDownload = await zipDownloadPromise;
   assert.equal(zipDownload.suggestedFilename(), 'provas-enem.zip');
 
-  const backupDownloadPromise = page.waitForEvent('download');
-  await page.locator('#btn-export-backup').click();
-  const backupDownload = await backupDownloadPromise;
-  assert.equal(backupDownload.suggestedFilename(), 'prova-enem-backup.json');
+  await page.locator('#btn-save-share').click();
+  await page.locator('#proof-storage-modal.show').waitFor({ state: 'visible' });
+  assert.doesNotMatch(await page.locator('#proof-storage-modal').innerText(), /backup/i);
+  await page.locator('#btn-create-link').click();
+  const sharedLink = await page.locator('#proof-link').inputValue();
+  assert.match(sharedLink, /#prova=/);
+  const proofDownloadPromise = page.waitForEvent('download');
+  await page.locator('#btn-download-proof').click();
+  const proofDownload = await proofDownloadPromise;
+  assert.equal(proofDownload.suggestedFilename(), 'prova-enem.json');
+  await page.locator('#btn-open-proof').click();
+  const selectedId = selectedQuestionId;
+  await page.locator('#proof-file').setInputFiles({ name: 'prova-enem.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ type: 'montador-enem-proof', version: 1, header: {}, selected: [{ id: selectedId, points: 1 }], variantsCount: 1, shuffleIncorrect: false, includeAnswerSheet: true })) });
+  await page.locator('#proof-storage-modal').waitFor({ state: 'hidden' });
 
   const printPopupPromise = page.waitForEvent('popup');
   await page.locator('#btn-print-student').click();
@@ -110,6 +145,28 @@ try {
   assert.equal(await printPopup.locator('.answer-student-identification').count(), 1);
   assert.equal(await printPopup.locator('.page-footer').count(), 0);
   await printPopup.close();
+
+  const sharedPage = await browser.newPage();
+  await sharedPage.goto(sharedLink, { waitUntil: 'networkidle' });
+  await sharedPage.locator('#db-status.bg-success').waitFor({ state: 'visible', timeout: 30_000 });
+  await sharedPage.locator('#shared-proof-modal.show').waitFor({ state: 'visible', timeout: 30_000 });
+  assert.match(await sharedPage.locator('#shared-proof-message').innerText(), /1 questão/);
+  await sharedPage.locator('#btn-open-shared-proof').click();
+  await sharedPage.locator('#shared-proof-modal').waitFor({ state: 'hidden' });
+  assert.equal(await sharedPage.locator('#selected-count').innerText(), '1');
+  await sharedPage.close();
+
+  const mismatchedUrl = new URL(sharedLink);
+  const encodedPayload = mismatchedUrl.hash.slice('#prova='.length);
+  const mismatchedPayload = JSON.parse(Buffer.from(encodedPayload, 'base64url').toString('utf8'));
+  mismatchedPayload.databaseHash = 'outro-banco';
+  mismatchedUrl.hash = 'prova=' + Buffer.from(JSON.stringify(mismatchedPayload)).toString('base64url');
+  const mismatchPage = await browser.newPage();
+  await mismatchPage.goto(mismatchedUrl.href, { waitUntil: 'networkidle' });
+  await mismatchPage.locator('#db-status.bg-success').waitFor({ state: 'visible', timeout: 30_000 });
+  await mismatchPage.locator('#shared-proof-modal.show').waitFor({ state: 'visible', timeout: 30_000 });
+  assert.match(await mismatchPage.locator('#shared-proof-warning').innerText(), /outra versão/);
+  await mismatchPage.close();
 
   const teacherPopupPromise = page.waitForEvent('popup');
   await page.locator('#btn-print-teacher').click();

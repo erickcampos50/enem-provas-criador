@@ -279,3 +279,17 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 **Correção:** removidos o rodapé fixo, o cálculo de páginas e seus estilos da pré-visualização e da impressão. A prova mantém somente os cabeçalhos e identificações já existentes.
 
 **Validação:** `npm test`, build com `VITE_BASE_PATH=/enem-provas-criador/` e smoke test do navegador aprovados.
+
+
+## 19/09/2026 — Comunicação visual, autosalvamento e compartilhamento
+
+**Entregas:**
+
+- O título passou a comunicar diretamente o público e a finalidade: Provas ENEM para Professores. A interface adotou fundo claro, azul de destaque, bordas suaves e tipografia de sistema inspirados na estética Apple, preservando legibilidade em telas menores.
+- O badge da base informa a quantidade real de questões e provas, usando a tabela exams: 2.757 questões · 15 provas. O estado de carregamento agora informa Carregando base local….
+- A seção Como funciona esta ferramenta? ficou expansível e instrui sobre finalidade pedagógica, busca, salvamento local, variantes e dependência das URLs remotas de imagens. A dispensa continua persistida no navegador.
+- O rascunho local passou a ser restaurado automaticamente após a inicialização do banco, sem pergunta de confirmação. O smoke test confirma o comportamento após reload.
+- O modal Salvar e compartilhar prova reúne salvamento manual, arquivo JSON da prova, link #prova=, cópia do link, abertura do arquivo e limpeza confirmada do rascunho. A compatibilidade com o formato antigo continua preservada.
+- A área Gerar a prova e exportar explica variantes, deslocamento da correta, embaralhamento determinístico das incorretas e folha de respostas. Os rótulos agora destacam Baixar prova em PDF e Baixar gabarito do professor.
+
+**Validação:** npm test (13 aprovados), build com VITE_BASE_PATH=/enem-provas-criador/ e MONTADOR_TEST_URL=http://127.0.0.1:4173/enem-provas-criador/ npm run test:browser aprovados.

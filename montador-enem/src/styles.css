@@ -1,11 +1,11 @@
 @import 'bootstrap/dist/css/bootstrap.min.css';
 
-:root { --app-bg: #f5f7fb; }
-body { background: var(--app-bg); color: #172033; }
+:root { --app-bg: #f5f5f7; --app-text: #1d1d1f; --app-muted: #6e6e73; --app-accent: #0071e3; --bs-primary: #0071e3; --bs-primary-rgb: 0, 113, 227; --bs-link-color: #0071e3; --bs-link-hover-color: #005bb5; }
+body { background: var(--app-bg); color: var(--app-text); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; }
 .app-shell { min-height: 100vh; }
-.app-header { background: #14213d; color: #fff; }
-.app-header .badge { background: #fca311; color: #14213d; }
-.library-card, .builder-card { border: 0; box-shadow: 0 .25rem 1rem rgba(20,33,61,.08); }
+.app-header { background: rgba(255,255,255,.9); color: var(--app-text); border-bottom: 1px solid #e5e5e7; backdrop-filter: saturate(180%) blur(20px); }
+.app-header .badge { background: var(--app-accent); color: #fff; }
+.library-card, .builder-card { border: 1px solid #e5e5e7; border-radius: 1rem; box-shadow: 0 .35rem 1.2rem rgba(0,0,0,.055); }
 .question-result { border-left: .3rem solid transparent; }
 .question-result.selected { border-left-color: #0d6efd; background: #eef5ff; }
 .question-result .result-title { font-size: .98rem; }
@@ -44,3 +44,22 @@ body { background: var(--app-bg); color: #172033; }
   .no-print, .app-header, .sidebar, .toolbar { display: none !important; }
   body { background: #fff; }
 }
+
+.app-header h1 { letter-spacing: -.02em; }
+.app-header .badge { max-width: 100%; white-space: normal; text-align: center; }
+.welcome-notice { border: 0; box-shadow: 0 .2rem .8rem rgba(13, 110, 253, .08); }
+.welcome-notice summary { cursor: pointer; font-weight: 700; }
+.draft-status, .storage-status { font-size: .76rem; }
+.storage-option { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e6ebf1; }
+.storage-option:first-of-type { margin-top: .5rem; padding-top: 0; border-top: 0; }
+.storage-option h3 { margin-bottom: .35rem; }
+.storage-option-danger { border-top-color: #f1c7cb; }
+.just-selected { animation: selected-feedback .9s ease-out; }
+@keyframes selected-feedback { 0% { box-shadow: 0 0 0 0 rgba(25, 135, 84, .35); } 45% { box-shadow: 0 0 0 .4rem rgba(25, 135, 84, .12); } 100% { box-shadow: 0 .25rem 1rem rgba(20,33,61,.08); } }
+@media (max-width: 767.98px) { .app-header h1 { font-size: 1.05rem; } .app-header .badge { flex-basis: 100%; } }
+
+.btn { border-radius: 999px; }
+.form-control, .form-select { border-color: #d2d2d7; border-radius: .75rem; }
+.form-control:focus, .form-select:focus { border-color: var(--app-accent); box-shadow: 0 0 0 .2rem rgba(0,113,227,.16); }
+.card-body { padding: 1.25rem; }
+.welcome-content li + li { margin-top: .45rem; }

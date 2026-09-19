@@ -181,10 +181,10 @@ async function initDatabase(message) {
       `SELECT name
          FROM sqlite_schema
         WHERE type = 'table'
-          AND name IN ('questions', 'alternatives', 'question_files', 'search_index')`,
+          AND name IN ('exams', 'questions', 'alternatives', 'question_files', 'search_index')`,
     ).map((row) => row.name);
 
-    const missingTables = ['questions', 'alternatives', 'question_files', 'search_index'].filter(
+    const missingTables = ['exams', 'questions', 'alternatives', 'question_files', 'search_index'].filter(
       (name) => !requiredTables.includes(name),
     );
     if (missingTables.length > 0) {
@@ -196,13 +196,14 @@ async function initDatabase(message) {
       );
     }
 
-    const count = executeRows(nextDatabase, 'SELECT count(*) AS total FROM questions')[0]?.total;
+    const counts = executeRows(nextDatabase, 'SELECT (SELECT count(*) FROM questions) AS question_count, (SELECT count(*) FROM exams) AS exam_count')[0];
     database = nextDatabase;
 
     return {
       ready: true,
       version: sqlite3.version?.libVersion ?? null,
-      questionCount: Number(asNumber(count) ?? 0),
+      questionCount: Number(asNumber(counts?.question_count) ?? 0),
+      examCount: Number(asNumber(counts?.exam_count) ?? 0),
     };
   } catch (error) {
     if (pointerOwnedByDatabase) {

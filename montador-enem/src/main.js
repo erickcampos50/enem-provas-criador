@@ -6,7 +6,7 @@ import { loadDatabaseBytes } from './cache.js';
 import { buildVariants } from './variants.js';
 import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
 import { renderMarkdown } from './markdown.js';
-import { clearDraft, downloadText, exportBackup, parseBackup, readDraft, writeDraft } from './storage.js';
+import { clearDraft, dismissWelcome, downloadText, encodeProofLink, exportProof, parseProof, parseProofLink, readDraft, shouldShowWelcome, writeDraft } from './storage.js';
 
 window.$ = $;
 window.bootstrap = bootstrap;
@@ -29,6 +29,9 @@ const state = {
   previewTeacher: false,
   previewVariant: 0,
   filtersData: { years: [], disciplines: [], languages: [] },
+  database: { sha256: '', questionCount: 0, examCount: 0 },
+  draftSavedAt: null,
+  pendingSharedProof: null,
 };
 
 let draftTimer;
@@ -60,9 +63,37 @@ function showToast(message, type = 'info') {
   element.addEventListener('hidden.bs.toast', () => element.remove());
 }
 
+function formatCount(value) {
+  return new Intl.NumberFormat('pt-BR').format(Number(value) || 0);
+}
+
+function formatSavedAt(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function updateDraftStatus(message, kind = 'muted') {
+  $('#draft-status, #proof-save-status')
+    .text(message)
+    .removeClass('text-secondary text-success text-danger text-warning')
+    .addClass({ muted: 'text-secondary', success: 'text-success', danger: 'text-danger', pending: 'text-warning' }[kind] || 'text-secondary');
+}
+
+function saveDraftNow({ notify = false } = {}) {
+  try {
+    state.draftSavedAt = writeDraft(state);
+    updateDraftStatus('Salvo neste navegador às ' + formatSavedAt(state.draftSavedAt), 'success');
+    if (notify) showToast('Prova salva neste navegador.', 'success');
+  } catch (error) {
+    updateDraftStatus('Não foi possível salvar neste navegador.', 'danger');
+    showToast('Não foi possível salvar a prova localmente: ' + error.message, 'danger');
+  }
+}
+
 function scheduleDraft() {
   clearTimeout(draftTimer);
-  draftTimer = setTimeout(() => writeDraft(state), 350);
+  updateDraftStatus('Salvando…', 'pending');
+  draftTimer = setTimeout(() => saveDraftNow(), 350);
 }
 
 function selectOptions(items, selected, placeholder) {
@@ -74,17 +105,20 @@ function shell() {
     <div class="app-shell">
       <header class="app-header py-3 mb-4">
         <div class="container-fluid px-4 d-flex flex-wrap align-items-center gap-3">
-          <div><h1 class="h4 mb-0">Montador de Provas ENEM</h1><small class="opacity-75">Biblioteca local para professores</small></div>
-          <span id="db-status" class="badge rounded-pill">Carregando banco…</span>
+          <div><h1 class="h4 mb-0">Provas ENEM para Professores</h1><small class="opacity-75">Crie avaliações fundamentadas a partir de questões do ENEM.</small></div>
+          <span id="db-status" class="badge rounded-pill">Carregando base local…</span>
           <div class="ms-auto d-flex gap-2 no-print">
-            <button class="btn btn-sm btn-outline-light" id="btn-import-backup">Importar backup</button>
-            <button class="btn btn-sm btn-outline-light" id="btn-export-backup">Exportar backup</button>
-            <input type="file" id="backup-file" accept="application/json" class="d-none">
+            <button class="btn btn-sm btn-light" id="btn-save-share">Salvar e compartilhar prova</button>
           </div>
         </div>
       </header>
       <main class="container-fluid px-4 pb-5">
         <div id="app-alert" class="alert d-none" role="alert"></div>
+        <details id="welcome-notice" class="welcome-notice alert alert-info ${shouldShowWelcome() ? '' : 'd-none'}">
+          <summary>Como funciona esta ferramenta?</summary>
+          <div class="welcome-content small mt-2"><ul class="mb-0 ps-3"><li><strong>Finalidade:</strong> encontre questões confiáveis e crie rapidamente provas bem fundamentadas para ajudar seus alunos a se familiarizarem com o ENEM.</li><li><strong>Pesquisa:</strong> use a busca livre no contexto, na introdução e nas alternativas; combine ano, área, idioma e presença de imagens.</li><li><strong>Trabalhos salvos:</strong> a prova é salva automaticamente neste navegador. Use o botão de salvar e compartilhar para baixar um arquivo ou gerar um link para uso futuro.</li><li><strong>Variantes:</strong> gere de 1 a 5 versões da mesma prova. As versões reorganizam as alternativas e produzem gabaritos correspondentes para dificultar cópias.</li><li><strong>Imagens:</strong> as figuras continuam referenciadas pelas URLs originais e precisam de conexão quando forem carregadas.</li></ul></div>
+          <button type="button" class="btn btn-sm btn-outline-info mt-3" id="btn-dismiss-welcome">Entendi, não mostrar novamente</button>
+        </details>
         <div class="row g-4">
           <section class="col-xl-7">
             <div class="card library-card">
@@ -98,7 +132,7 @@ function shell() {
                   <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="filter-images"><label class="form-check-label" for="filter-images">Somente com imagens</label></div></div>
                   <div class="col-12 d-flex justify-content-between align-items-center"><button class="btn btn-primary" type="submit">Pesquisar</button><div class="form-check"><input class="form-check-input" type="checkbox" id="filter-hide-selected"><label class="form-check-label small" for="filter-hide-selected">Ocultar selecionadas</label></div></div>
                 </form>
-                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-2"><span id="result-count" class="small text-secondary">Nenhuma busca realizada</span><button class="btn btn-sm btn-outline-primary" id="btn-select-visible">Selecionar visíveis</button></div>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-2"><span id="result-count" class="small text-secondary" role="status" aria-live="polite">Nenhuma busca realizada</span><button class="btn btn-sm btn-outline-primary" id="btn-select-visible">Selecionar visíveis</button></div>
                 <div id="search-results" class="vstack gap-2"><div class="empty-state">Faça uma busca para explorar as questões.</div></div>
                 <div id="pagination" class="d-flex justify-content-center gap-2 mt-3"></div>
               </div>
@@ -106,12 +140,12 @@ function shell() {
           </section>
           <aside class="col-xl-5 sidebar">
             <div class="sticky-builder vstack gap-4">
-              <div class="card builder-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="h5 mb-1">Prova em construção</h2><p class="small text-secondary mb-0"><span id="selected-count">0</span> questões · <span id="total-points">0</span> pontos</p></div><button class="btn btn-sm btn-outline-danger" id="btn-clear-proof">Limpar</button></div><div id="selected-list" class="vstack gap-2"><div class="empty-state">Selecione questões na biblioteca.</div></div></div></div>
+              <div class="card builder-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="h5 mb-1">Prova em construção</h2><p class="small text-secondary mb-0"><span id="selected-count">0</span> questões · <span id="total-points">0</span> pontos</p><p id="draft-status" class="draft-status text-secondary mb-0" role="status" aria-live="polite">Salvamento automático ativado neste navegador.</p></div><button class="btn btn-sm btn-outline-danger" id="btn-clear-proof">Limpar</button></div><div id="selected-list" class="vstack gap-2"><div class="empty-state">Selecione questões na biblioteca.</div></div></div></div>
               <div class="card builder-card"><div class="card-body"><h2 class="h5">Identificação</h2><div class="row g-2" id="header-fields">
                 ${[['institution','Instituição'],['title','Nome da avaliação'],['subject','Disciplina'],['teacher','Professor'],['className','Turma'],['date','Data'],['period','Bimestre/período'],['duration','Duração'],['totalValue','Valor da prova']].map(([key,label]) => `<div class="col-md-6"><label class="form-label" for="header-${key}">${label}</label><input class="form-control form-control-sm" id="header-${key}" data-header="${key}"></div>`).join('')}
                 <div class="col-12"><label class="form-label" for="header-instructions">Instruções para os alunos</label><textarea class="form-control form-control-sm" rows="2" id="header-instructions" data-header="instructions"></textarea></div>
               </div></div></div>
-              <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar e exportar</h2><div class="row g-2 mb-3"><div class="col-6"><label class="form-label" for="variants-count">Variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div><div class="col-6 d-flex align-items-end"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar incorretas</label></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar PDF</strong><small>Versão do aluno · salvar como PDF</small></span></button><p class="pdf-action-help">Documento A4 já formatado para impressão.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">PDF do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-files">HTML e Markdown</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar ZIP</button></div></div></div>
+              <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar a prova e exportar</h2><p class="small text-secondary mb-3">Escolha quantas versões você precisa e entenda o que cada material entrega antes de baixar.</p><div class="row g-3 mb-3"><div class="col-12"><label class="form-label" for="variants-count">Quantidade de variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><div id="variants-help" class="form-text">Uma variante é uma versão da mesma prova com outra ordem de alternativas. A Variante A preserva a ordem original; as seguintes deslocam a resposta correta e geram um gabarito próprio.</div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar alternativas incorretas</label><div id="shuffle-help" class="form-text ms-4">Também reorganiza, de forma determinística, as alternativas erradas. Desmarcado, elas mantêm a ordem original e apenas a posição da correta muda.</div></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label><div id="answer-sheet-help" class="form-text ms-4">Acrescenta uma folha compacta para o aluno preencher, com identificação da variante e espaço para entregar junto com a prova.</div></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar prova em PDF</strong><small>Versão do aluno · pronta para imprimir</small></span></button><p class="pdf-action-help">O navegador abrirá a visualização de impressão para você salvar a prova em PDF. O gabarito não aparece nesta versão.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">Baixar gabarito do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-files">Exportar HTML e Markdown</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar ZIP completo</button></div></div></div>
             </div>
           </aside>
         </div>
@@ -140,6 +174,8 @@ function shell() {
       </section>
       <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
       <div class="modal fade" id="question-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5">Pré-visualização</h2><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body question-preview"></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div></div>
+      <div class="modal fade" id="proof-storage-modal" tabindex="-1" aria-labelledby="proof-storage-title" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="proof-storage-title">Salvar e compartilhar prova</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p id="proof-save-status" class="storage-status text-secondary" role="status" aria-live="polite">Salvamento automático ativado neste navegador.</p><div class="storage-option"><h3 class="h6">Salvar neste navegador</h3><p class="small text-secondary">Mantenha a prova disponível mesmo depois de fechar ou atualizar esta página.</p><button type="button" class="btn btn-outline-primary" id="btn-save-now">Salvar agora</button></div><div class="storage-option"><h3 class="h6">Compartilhar por link</h3><p class="small text-secondary">O link guarda a composição da prova e funciona quando a mesma base local estiver disponível.</p><button type="button" class="btn btn-primary" id="btn-create-link">Criar link compartilhável</button><div id="share-link-panel" class="d-none mt-3"><label class="form-label small" for="proof-link">Link da prova</label><div class="input-group"><input class="form-control form-control-sm" id="proof-link" readonly><button type="button" class="btn btn-outline-secondary" id="btn-copy-link">Copiar</button></div><div id="share-link-status" class="small text-secondary mt-2" role="status" aria-live="polite"></div></div></div><div class="storage-option"><h3 class="h6">Arquivo da prova</h3><p class="small text-secondary">Baixe um arquivo para guardar ou abra um arquivo recebido de outra pessoa.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary" id="btn-download-proof">Baixar arquivo da prova</button><button type="button" class="btn btn-outline-secondary" id="btn-open-proof">Abrir arquivo da prova</button><input type="file" id="proof-file" accept="application/json,.json" class="d-none"></div></div><div class="storage-option storage-option-danger"><h3 class="h6">Limpar salvamento local</h3><p class="small text-secondary">Remove o rascunho salvo neste navegador. A prova atualmente aberta não será apagada.</p><button type="button" class="btn btn-outline-danger" id="btn-clear-draft">Limpar rascunho salvo</button></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div></div>
+      <div class="modal fade" id="shared-proof-modal" tabindex="-1" aria-labelledby="shared-proof-title" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="shared-proof-title">Abrir prova compartilhada</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p id="shared-proof-message"></p><div id="shared-proof-warning" class="alert alert-warning d-none" role="alert"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Agora não</button><button type="button" class="btn btn-primary" id="btn-open-shared-proof">Abrir prova</button></div></div></div></div>
       <div class="loading-overlay" id="loading-overlay"><div class="text-center"><div class="spinner-border text-primary mb-3"></div><p id="loading-message" class="mb-0">Abrindo banco de questões…</p></div></div>
     </div>`);
 }
@@ -150,9 +186,18 @@ function renderFilters() {
   $('#filter-language').html(selectOptions(state.filtersData.languages, state.filters.language, 'Todos os idiomas'));
 }
 
+function flashSelectedQuestion(id) {
+  const card = document.querySelector('.question-result[data-question-id="' + id + '"]');
+  if (!card) return;
+  card.classList.remove('just-selected');
+  void card.offsetWidth;
+  card.classList.add('just-selected');
+  setTimeout(() => card.classList.remove('just-selected'), 900);
+}
+
 function renderResults() {
   const selectedIds = new Set(state.selected.map((item) => item.id));
-  $('#result-count').text(state.totalResults ? `${state.totalResults} questão(ões) encontrada(s)` : 'Nenhum resultado');
+  $('#result-count').text(state.totalResults ? formatCount(state.totalResults) + ' questão(ões) encontrada(s)' : 'Nenhum resultado');
   if (!state.results.length) {
     $('#search-results').html('<div class="empty-state">Nenhuma questão corresponde aos filtros.</div>');
   } else {
@@ -206,44 +251,111 @@ async function ensureQuestion(id) {
   return state.questionCache.get(id);
 }
 
-async function setSelected(id, selected) {
-  if (selected && !state.selected.some((item) => item.id === id)) {
+async function setSelected(id, selected, { notify = true } = {}) {
+  const wasSelected = state.selected.some((item) => item.id === id);
+  if (selected && !wasSelected) {
     await ensureQuestion(id);
     state.selected.push({ id, points: 1 });
-  } else if (!selected) {
+  } else if (!selected && wasSelected) {
     state.selected = state.selected.filter((item) => item.id !== id);
+  } else {
+    return false;
   }
   scheduleDraft(); renderSelected(); renderResults(); schedulePreview();
+  flashSelectedQuestion(id);
+  if (notify) showToast(selected ? 'Questão adicionada à prova.' : 'Questão removida da prova.', 'success');
+  return true;
 }
 
 function setSearchBusy(busy) {
-  const pagination = $("#pagination");
-  pagination.attr("aria-busy", busy ? "true" : "false");
-  pagination.find("button").prop("disabled", busy);
+  const pagination = $('#pagination');
+  pagination.attr('aria-busy', busy ? 'true' : 'false');
+  pagination.find('button').prop('disabled', busy);
+  $('#search-form button[type="submit"]').prop('disabled', busy).attr('aria-busy', busy ? 'true' : 'false');
 }
 
-async function performSearch(page = 1) {
+async function performSearch(page = 1, { notify = false } = {}) {
   const requestId = ++searchRequestId;
   const previousPage = state.page;
   state.page = page;
-  state.filters.q = $("#search-query").val().trim();
-  state.filters.year = $("#filter-year").val();
-  state.filters.discipline = $("#filter-discipline").val();
-  state.filters.language = $("#filter-language").val();
-  state.filters.hasImages = $("#filter-images").prop("checked") ? true : undefined;
-  const hideSelected = $("#filter-hide-selected").prop("checked");
+  state.filters.q = $('#search-query').val().trim();
+  state.filters.year = $('#filter-year').val();
+  state.filters.discipline = $('#filter-discipline').val();
+  state.filters.language = $('#filter-language').val();
+  state.filters.hasImages = $('#filter-images').prop('checked') ? true : undefined;
+  const hideSelected = $('#filter-hide-selected').prop('checked');
   setSearchBusy(true);
   try {
     const response = await db.searchQuestions({ ...state.filters, excludeIds: hideSelected ? state.selected.map((item) => item.id) : [], page, pageSize: state.pageSize });
     if (requestId !== searchRequestId) return;
     state.results = response.results; state.totalResults = response.total; response.results.forEach((item) => state.questionCache.set(item.id, { ...state.questionCache.get(item.id), ...item })); renderResults();
+    if (notify) showToast(response.total ? 'Busca concluída: ' + formatCount(response.total) + ' questões encontradas.' : 'Nenhuma questão encontrada com esses critérios.', response.total ? 'success' : 'info');
   } catch (error) {
     if (requestId !== searchRequestId) return;
     state.page = previousPage;
     renderResults();
-    showToast(error.message, "danger");
+    showToast(error.message, 'danger');
   } finally {
     if (requestId === searchRequestId) setSearchBusy(false);
+  }
+}
+
+function openStorageModal() {
+  updateDraftStatus(state.draftSavedAt ? 'Salvo neste navegador às ' + formatSavedAt(state.draftSavedAt) : 'Salvamento automático ativado neste navegador.', state.draftSavedAt ? 'success' : 'muted');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('proof-storage-modal')).show();
+}
+
+function closeStorageModal() {
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('proof-storage-modal')).hide();
+}
+
+function clearLocationHash() {
+  const url = new URL(window.location.href);
+  url.hash = '';
+  window.history.replaceState(null, '', url.href);
+}
+
+function showSharedProofDialog(proof) {
+  state.pendingSharedProof = proof;
+  $('#shared-proof-message').text('Este link contém uma prova com ' + formatCount(proof.selected.length) + ' questão(ões). Deseja abrir essa composição e substituir a prova atualmente aberta?');
+  const mismatch = proof.databaseHash !== state.database.sha256;
+  $('#shared-proof-warning').toggleClass('d-none', !mismatch).text(mismatch ? 'O link foi criado com outra versão da base. A restauração só será feita se todas as questões ainda estiverem disponíveis nesta base.' : '');
+  bootstrap.Modal.getOrCreateInstance(document.getElementById('shared-proof-modal')).show();
+}
+
+async function restoreProof(value) {
+  const missing = [];
+  for (const item of value.selected) {
+    try {
+      await ensureQuestion(item.id);
+    } catch {
+      missing.push(item.id);
+    }
+  }
+  if (missing.length) throw new Error('Não foi possível localizar ' + formatCount(missing.length) + ' questão(ões) nesta base.');
+  state.header = { ...state.header, ...value.header };
+  state.selected = value.selected.map((item) => ({ id: Number(item.id), points: Number(item.points ?? 1) }));
+  state.variantsCount = Math.min(5, Math.max(1, Number(value.variantsCount) || 1));
+  state.shuffleIncorrect = Boolean(value.shuffleIncorrect);
+  state.includeAnswerSheet = value.includeAnswerSheet !== false;
+  fillHeader(); scheduleDraft(); renderSelected(); renderResults(); schedulePreview();
+}
+
+async function openSharedProof() {
+  const proof = state.pendingSharedProof;
+  if (!proof) return;
+  const button = $('#btn-open-shared-proof');
+  button.prop('disabled', true).text('Abrindo…');
+  try {
+    await restoreProof(proof);
+    state.pendingSharedProof = null;
+    clearLocationHash();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('shared-proof-modal')).hide();
+    showToast('Prova compartilhada aberta.', 'success');
+  } catch (error) {
+    showToast(error.message, 'danger');
+  } finally {
+    button.prop('disabled', false).text('Abrir prova');
   }
 }
 
@@ -395,16 +507,23 @@ async function restoreBackup(value) {
 }
 
 function bindEvents() {
-  $('#search-form').on('submit', (event) => { event.preventDefault(); performSearch(1); });
-  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline,#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); performSearch(1); });
-  $('#search-results').on('change', '.question-select', (event) => setSelected(Number(event.currentTarget.dataset.questionId), event.currentTarget.checked));
-  $('#search-results').on('click', '[data-preview-id]', (event) => { event.preventDefault(); showPreview(Number(event.currentTarget.dataset.previewId)); });
-  $('#btn-select-visible').on('click', async () => { for (const result of state.results) await setSelected(result.id, true); });
-  $('#pagination').on('click', '[data-page]', (event) => { const page = Number(event.currentTarget.dataset.page); if (page > 0) performSearch(page); });
-  $('#selected-list').on('click', '.remove-selected', (event) => setSelected(Number(event.currentTarget.dataset.selectedId), false));
+  $('#search-form').on('submit', (event) => { event.preventDefault(); void performSearch(1, { notify: true }); });
+  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline,#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); void performSearch(1, { notify: true }); });
+  $('#search-results').on('change', '.question-select', (event) => { void setSelected(Number(event.currentTarget.dataset.questionId), event.currentTarget.checked).catch((error) => showToast(error.message, 'danger')); });
+  $('#search-results').on('click', '[data-preview-id]', (event) => { event.preventDefault(); void showPreview(Number(event.currentTarget.dataset.previewId)); });
+  $('#btn-select-visible').on('click', async () => {
+    const before = state.selected.length;
+    try {
+      for (const result of state.results) await setSelected(result.id, true, { notify: false });
+      const added = state.selected.length - before;
+      showToast(added ? formatCount(added) + ' questão(ões) adicionada(s) à prova.' : 'As questões visíveis já estão selecionadas.', added ? 'success' : 'info');
+    } catch (error) { showToast(error.message, 'danger'); }
+  });
+  $('#pagination').on('click', '[data-page]', (event) => { const page = Number(event.currentTarget.dataset.page); if (page > 0) void performSearch(page); });
+  $('#selected-list').on('click', '.remove-selected', (event) => { void setSelected(Number(event.currentTarget.dataset.selectedId), false).catch((error) => showToast(error.message, 'danger')); });
   $('#selected-list').on('click', '.move-up', (event) => moveSelected(Number(event.currentTarget.dataset.selectedId), -1));
   $('#selected-list').on('click', '.move-down', (event) => moveSelected(Number(event.currentTarget.dataset.selectedId), 1));
-  $('#selected-list').on('click', '[data-preview-id]', (event) => showPreview(Number(event.currentTarget.dataset.previewId)));
+  $('#selected-list').on('click', '[data-preview-id]', (event) => { void showPreview(Number(event.currentTarget.dataset.previewId)); });
   $('#selected-list').on('change', '.selected-points', (event) => { const item = state.selected.find((candidate) => candidate.id === Number(event.currentTarget.dataset.selectedId)); if (item) item.points = Number(event.currentTarget.value) || 0; scheduleDraft(); renderSelected(); schedulePreview(); });
   $('#selected-list').on('dragstart', '.selected-item', (event) => { draggedId = Number(event.currentTarget.dataset.selectedId); event.currentTarget.classList.add('dragging'); });
   $('#selected-list').on('dragend', '.selected-item', (event) => { event.currentTarget.classList.remove('dragging'); draggedId = null; });
@@ -414,33 +533,73 @@ function bindEvents() {
   $('#variants-count').on('change', (event) => { state.variantsCount = Number(event.currentTarget.value); renderPreviewVariantOptions(); scheduleDraft(); schedulePreview(); });
   $('#shuffle-incorrect').on('change', (event) => { state.shuffleIncorrect = event.currentTarget.checked; scheduleDraft(); schedulePreview(); });
   $('#include-answer-sheet').on('change', (event) => { state.includeAnswerSheet = event.currentTarget.checked; scheduleDraft(); schedulePreview(); });
-  $('#btn-clear-proof').on('click', () => { if (confirm('Remover todas as questões da prova?')) { state.selected = []; scheduleDraft(); renderSelected(); renderResults(); schedulePreview(); } });
+  $('#btn-clear-proof').on('click', () => { if (confirm('Remover todas as questões da prova?')) { state.selected = []; scheduleDraft(); renderSelected(); renderResults(); schedulePreview(); showToast('Questões removidas da prova.', 'success'); } });
   $('#preview-variant').on('change', (event) => { state.previewVariant = Number(event.currentTarget.value) || 0; renderPreview(); });
   $('#preview-student').on('click', () => { state.previewTeacher = false; renderPreview(); });
   $('#preview-teacher').on('click', () => { state.previewTeacher = true; renderPreview(); });
-  $('#btn-export-files').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet }); showToast('Arquivos gerados.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
-  $('#btn-export-zip').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet, zip: true }); showToast('ZIP gerado.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
+  $('#btn-export-files').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet }); showToast('Arquivos da prova gerados.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
+  $('#btn-export-zip').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet, zip: true }); showToast('ZIP da prova gerado.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
   $('#btn-print-student').on('click', () => openPrint(false, state.previewVariant)); $('#btn-print-teacher').on('click', () => openPrint(true, state.previewVariant));
   $('#btn-preview-pdf').on('click', () => openPrint(state.previewTeacher, state.previewVariant));
-  $('#btn-export-backup').on('click', () => downloadText('prova-enem-backup.json', exportBackup(state)));
-  $('#btn-import-backup').on('click', () => $('#backup-file').trigger('click'));
-  $('#backup-file').on('change', async (event) => { const [file] = event.currentTarget.files; if (!file) return; try { await restoreBackup(parseBackup(await file.text())); showToast('Backup restaurado.', 'success'); } catch (error) { showToast(error.message, 'danger'); } event.currentTarget.value = ''; });
+  $('#btn-save-share').on('click', openStorageModal);
+  $('#btn-save-now').on('click', () => saveDraftNow({ notify: true }));
+  $('#btn-create-link').on('click', () => {
+    try {
+      if (!state.selected.length) throw new Error('Adicione pelo menos uma questão antes de criar um link.');
+      const link = encodeProofLink(state, state.database.sha256, window.location.href);
+      $('#proof-link').val(link); $('#share-link-panel').removeClass('d-none'); $('#share-link-status').text('Link criado. Copie e envie para compartilhar a composição da prova.');
+      showToast('Link compartilhável criado.', 'success');
+    } catch (error) { showToast(error.message, 'danger'); }
+  });
+  $('#btn-copy-link').on('click', async () => {
+    const input = document.getElementById('proof-link');
+    if (!input.value) return;
+    try {
+      await navigator.clipboard.writeText(input.value);
+      $('#share-link-status').text('Link copiado para a área de transferência.');
+      showToast('Link copiado.', 'success');
+    } catch {
+      input.focus(); input.select();
+      $('#share-link-status').text('Selecione e copie o link manualmente.');
+      showToast('O link está pronto para ser copiado.', 'info');
+    }
+  });
+  $('#btn-download-proof').on('click', () => { try { downloadText('prova-enem.json', exportProof(state)); showToast('Arquivo da prova baixado.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
+  $('#btn-open-proof').on('click', () => $('#proof-file').trigger('click'));
+  $('#proof-file').on('change', async (event) => { const [file] = event.currentTarget.files; if (!file) return; try { await restoreProof(parseProof(await file.text())); closeStorageModal(); showToast('Arquivo da prova aberto.', 'success'); } catch (error) { showToast(error.message, 'danger'); } event.currentTarget.value = ''; });
+  $('#btn-clear-draft').on('click', () => { if (confirm('Remover o rascunho salvo neste navegador?')) { clearDraft(); state.draftSavedAt = null; updateDraftStatus('Nenhum rascunho salvo neste navegador.', 'muted'); showToast('Rascunho local removido.', 'success'); } });
+  $('#btn-dismiss-welcome').on('click', () => { dismissWelcome(); $('#welcome-notice').addClass('d-none').removeAttr('open'); });
+  $('#btn-open-shared-proof').on('click', () => { void openSharedProof(); });
+  $('#shared-proof-modal').on('hidden.bs.modal', () => { if (state.pendingSharedProof) { state.pendingSharedProof = null; clearLocationHash(); } });
 }
 
 async function start() {
   shell(); bindEvents();
   try {
     const loaded = await loadDatabaseBytes();
-    await db.init(loaded.bytes);
+    const initialized = await db.init(loaded.bytes);
+    state.database = { sha256: loaded.manifest.sha256, questionCount: initialized.questionCount, examCount: initialized.examCount };
     state.filtersData = await db.getFilters(); renderFilters();
-    $('#db-status').text(`${loaded.cached ? 'Banco em cache' : 'Banco carregado'} · ${loaded.manifest.bytes / 1048576 | 0} MiB`).removeClass('bg-danger').addClass('bg-success');
+    $('#db-status').text(formatCount(initialized.questionCount) + ' questões · ' + formatCount(initialized.examCount) + ' provas').attr('title', 'Base local carregada').removeClass('bg-danger').addClass('bg-success');
     const draft = readDraft();
-    if (draft && confirm(`Restaurar o rascunho salvo em ${new Date(draft.savedAt).toLocaleString('pt-BR')}?`)) await restoreBackup(draft);
+    if (draft) {
+      state.draftSavedAt = draft.savedAt;
+      updateDraftStatus('Salvo neste navegador às ' + formatSavedAt(state.draftSavedAt), 'success');
+      await restoreProof(draft);
+      showToast('Rascunho restaurado automaticamente.', 'info');
+    }
     await performSearch(1);
     renderPreview();
+    try {
+      const sharedProof = parseProofLink(window.location.hash);
+      if (sharedProof) showSharedProofDialog(sharedProof);
+    } catch (error) {
+      clearLocationHash();
+      showToast(error.message, 'danger');
+    }
   } catch (error) {
-    $('#db-status').text('Falha no banco').removeClass('bg-success').addClass('bg-danger');
-    $('#app-alert').removeClass('d-none').addClass('alert-danger').text(`${error.message} Execute npm run sync:database antes de iniciar a aplicação.`);
+    $('#db-status').text('Não foi possível carregar a base').removeClass('bg-success').addClass('bg-danger');
+    $('#app-alert').removeClass('d-none').addClass('alert-danger').text(error.message + ' Execute npm run sync:database antes de iniciar a aplicação.');
   } finally { $('#loading-overlay').remove(); }
 }
 

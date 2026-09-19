@@ -1,6 +1,6 @@
-# Montador de Provas ENEM
+# Provas ENEM para Professores
 
-Aplicação estática para professores pesquisarem questões do ENEM, montarem avaliações, criarem variantes e exportarem documentos para aluno e professor.
+Aplicação estática para professores pesquisarem questões do ENEM, criarem rapidamente avaliações fundamentadas, gerarem variantes e exportarem documentos para aluno e professor.
 
 ## Desenvolvimento
 
@@ -34,7 +34,7 @@ npm run build
 Com um servidor Vite já iniciado em outra janela, o smoke test de navegador pode ser executado com Chromium:
 
 ```bash
-MONTADOR_TEST_URL=http://127.0.0.1:4173 npm run test:browser
+MONTADOR_TEST_URL=http://127.0.0.1:4173/enem-provas-criador/ npm run test:browser
 ```
 
 `enem-api/` é um projeto legado separado e está excluído do Git da raiz.
@@ -58,12 +58,20 @@ npm run preview:pages -- --host 127.0.0.1 --port 4173
 
 ## PDF
 
-O botão **Baixar PDF** prepara a versão A4 e abre a impressão do navegador. Escolha **Salvar como PDF** no destino da impressão.
+O botão **Baixar prova em PDF** prepara a versão A4 e abre a impressão do navegador. Escolha **Salvar como PDF** no destino da impressão.
 
 - O documento usa uma folha A4 monocromática, com cabeçalho formal, folha de respostas e gabarito do professor.
-- O marcador de variante e página fica em uma faixa reservada no alto da folha, fora do fluxo do cabeçalho e das questões.
+- A variante é identificada no cabeçalho da prova; não há faixa fixa sobre o conteúdo.
 - O navegador aguarda o carregamento das imagens antes de abrir a impressão; as URLs remotas permanecem preservadas.
 - HTML e Markdown continuam disponíveis como formatos auxiliares; o ZIP mantém esses arquivos.
+
+## Salvar e compartilhar
+
+A prova é salva automaticamente neste navegador. O botão **Salvar e compartilhar prova** permite salvar agora, baixar um arquivo JSON para uso futuro e gerar um link contendo a composição da prova, sem duplicar o banco ou as imagens.
+
+## Gerar variantes
+
+As variantes mantêm as mesmas questões, mas mudam a ordem das alternativas e geram gabaritos próprios. A opção de embaralhar incorretas também altera a ordem relativa das alternativas erradas de forma determinística; a folha de respostas compacta pode ser incluída na versão do aluno.
 
 A pré-visualização usa o mesmo HTML/CSS da impressão para permitir a conferência antes de abrir a janela de impressão.
 ## Prévia dos resultados
