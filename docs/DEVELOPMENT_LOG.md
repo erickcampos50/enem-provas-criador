@@ -243,3 +243,15 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - Adicionado preview:pages para testar localmente a aplicação em /enem-provas-criador/.
 
 **Validação:** npm test, build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test completo no subdiretório aprovados.
+
+
+## 19/09/2026 — Artefato do Pages movido para docs/
+
+**Entregas:**
+
+- O Vite passou a gerar diretamente em docs/, que agora contém index.html, assets, WASM, manifesto e cópia publicada do SQLite.
+- O build limpa somente os artefatos publicados anteriores e preserva docs/DEVELOPMENT_LOG.md.
+- O workflow do GitHub Pages passou a enviar docs/ como artefato; a mesma pasta pode ser selecionada no GitHub em Deploy from a branch → main → /docs.
+- O servidor preview:pages foi ajustado para servir o conteúdo de docs/ no subdiretório do projeto.
+
+**Validação:** npm test, build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test completo diretamente sobre docs/ aprovados.

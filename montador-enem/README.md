@@ -41,13 +41,13 @@ MONTADOR_TEST_URL=http://127.0.0.1:4173 npm run test:browser
 
 ## Publicação no GitHub Pages
 
-O workflow [deploy-pages.yml](../.github/workflows/deploy-pages.yml) publica automaticamente a aplicação quando há um push na branch `main`. No GitHub, configure Settings → Pages → Source: GitHub Actions uma única vez.
+O workflow [deploy-pages.yml](../.github/workflows/deploy-pages.yml) publica automaticamente a aplicação quando há um push na branch `main`. No GitHub, você pode configurar Settings → Pages → Deploy from a branch → `main` → `/docs` para usar o padrão nativo. O workflow de Actions também continua disponível para publicação automática por artefato.
 
 Depois da publicação, a aplicação ficará disponível em:
 
 `https://erickcampos50.github.io/enem-provas-criador/`
 
-O workflow instala as dependências, executa os testes, sincroniza o `enem.sqlite` canônico da raiz e gera o artefato estático com o caminho-base correto. O banco e o WASM são carregados pelo subdiretório do projeto; nenhum arquivo de `enem-api/` participa do build.
+O build instala as dependências, executa os testes, sincroniza o `enem.sqlite` canônico da raiz e gera a aplicação publicada diretamente em `docs/`, com o caminho-base correto. O banco e o WASM são carregados pelo subdiretório do projeto; nenhum arquivo de `enem-api/` participa do build. A pasta `montador-enem/` contém o código-fonte e `docs/` contém o artefato que o Pages publica.
 
 Para testar localmente o mesmo caminho-base do Pages:
 

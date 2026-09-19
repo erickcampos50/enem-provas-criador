@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const projectRoot = resolve(here, '..');
-const distRoot = resolve(projectRoot, 'dist');
+const distRoot = resolve(projectRoot, '..', 'docs');
 const base = normalizeBase(process.env.VITE_BASE_PATH || '/enem-provas-criador/');
 const args = new Map(process.argv.slice(2).map((value, index, values) => [value, values[index + 1]]));
 const host = args.get('--host') || '127.0.0.1';

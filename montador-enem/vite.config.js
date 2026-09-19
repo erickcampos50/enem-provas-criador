@@ -6,6 +6,10 @@ const base = process.env.VITE_BASE_PATH || (process.env.GITHUB_ACTIONS && reposi
 export default defineConfig({
   base,
   publicDir: 'public',
+  build: {
+    outDir: '../docs',
+    emptyOutDir: false,
+  },
   server: {
     fs: {
       allow: ['..'],
