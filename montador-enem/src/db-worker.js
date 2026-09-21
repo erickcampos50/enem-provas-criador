@@ -277,16 +277,113 @@ function makeSafeFtsQuery(value) {
     );
   }
 
-  const normalized = value.normalize('NFKC');
-  const tokens = normalized.match(/[\p{L}\p{N}]+/gu) ?? [];
-  if (tokens.length === 0) return { query: undefined, noMatches: true };
+  const normalized = value.normalize('NFKC').trim();
+  if (!normalized) return { query: undefined, noMatches: false };
 
-  return {
-    query: tokens
-      .map((token) => `"${token.replaceAll('"', '""')}"`)
-      .join(' AND '),
-    noMatches: false,
-  };
+  const rawTokens = [];
+  let i = 0;
+  const len = normalized.length;
+
+  while (i < len) {
+    while (i < len && /\s/.test(normalized[i])) i++;
+    if (i >= len) break;
+    const ch = normalized[i];
+
+    if (ch === '"') {
+      const closing = normalized.indexOf('"', i + 1);
+      if (closing === -1) {
+        const phrase = normalized.slice(i + 1).trim();
+        if (phrase) {
+          const escaped = phrase.replaceAll('"', '""').replace(/\s+/g, ' ').trim();
+          if (escaped && /[\p{L}\p{N}]/u.test(escaped)) rawTokens.push({ type: 'term', value: `"${escaped}"` });
+        }
+        break;
+      }
+      const phrase = normalized.slice(i + 1, closing);
+      const escaped = phrase.replaceAll('"', '""').trim().replace(/\s+/g, ' ');
+      if (escaped && /[\p{L}\p{N}]/u.test(escaped)) rawTokens.push({ type: 'term', value: `"${escaped}"` });
+      i = closing + 1;
+      continue;
+    }
+
+    if (ch === '(') { rawTokens.push({ type: 'lparen', value: '(' }); i++; continue; }
+    if (ch === ')') { rawTokens.push({ type: 'rparen', value: ')' }); i++; continue; }
+
+    if (ch === '-') {
+      const next = normalized[i + 1];
+      if (next && /[\p{L}\p{N}"]/u.test(next)) {
+        rawTokens.push({ type: 'op', value: 'NOT' });
+        i++;
+        continue;
+      }
+      i++;
+      continue;
+    }
+
+    const rest = normalized.slice(i);
+    const nearMatch = rest.match(/^NEAR(\/\d+)?\b/i);
+    if (nearMatch) {
+      rawTokens.push({ type: 'op', value: nearMatch[0].toUpperCase() });
+      i += nearMatch[0].length;
+      continue;
+    }
+    const opMatch = rest.match(/^(AND|OR|NOT)\b/i);
+    if (opMatch) {
+      rawTokens.push({ type: 'op', value: opMatch[1].toUpperCase() });
+      i += opMatch[1].length;
+      continue;
+    }
+
+    const wordMatch = rest.match(/^[\p{L}\p{N}]+/u);
+    if (wordMatch) {
+      const word = wordMatch[0];
+      const escaped = word.replaceAll('"', '""');
+      rawTokens.push({ type: 'term', value: `"${escaped}"` });
+      i += word.length;
+      if (i < len && normalized[i] === '*') {
+        const last = rawTokens[rawTokens.length - 1];
+        last.value = `"${escaped}"*`;
+        i++;
+      }
+      continue;
+    }
+
+    i++;
+  }
+
+  if (rawTokens.length === 0) return { query: undefined, noMatches: true };
+
+  const output = [];
+  for (const cur of rawTokens) {
+    const prev = output[output.length - 1];
+    if (prev) {
+      const prevIsTermLike = prev.type === 'term' || prev.type === 'rparen';
+      const curIsTermLike = cur.type === 'term' || cur.type === 'lparen';
+      const curIsNot = cur.type === 'op' && cur.value === 'NOT';
+      if (prevIsTermLike && (curIsTermLike || curIsNot)) {
+        output.push({ type: 'op', value: 'AND' });
+      }
+    }
+    output.push(cur);
+  }
+
+  while (output.length && output[0].type === 'op' && ['AND', 'OR'].includes(output[0].value)) output.shift();
+  while (output.length && output[0].type === 'op' && output[0].value.startsWith('NEAR')) output.shift();
+  while (output.length && output[output.length - 1].type === 'op') output.pop();
+
+  // Remove empty parentheses pairs like ()
+  const filtered = output.filter((tok, idx, arr) => {
+    if (tok.type === 'lparen' && arr[idx + 1]?.type === 'rparen') return false;
+    if (tok.type === 'rparen' && arr[idx - 1]?.type === 'lparen') return false;
+    return true;
+  });
+
+  const hasTerm = filtered.some((t) => t.type === 'term');
+  if (!hasTerm) return { query: undefined, noMatches: true };
+
+  const query = filtered.map((t) => t.value).join(' ');
+  if (!query) return { query: undefined, noMatches: true };
+  return { query, noMatches: false };
 }
 
 function parseSearchOptions(payload) {

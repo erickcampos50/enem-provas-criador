@@ -43,6 +43,22 @@ function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 }
 
+function stripEnem(value) {
+  return String(value ?? '')
+    .replace(/\bENEM\b/gi, '')
+    .replace(/\s*-\s*-\s*/g, ' - ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*-\s*$/g, '')
+    .trim()
+    .replace(/\s*-\s*$/, '')
+    .replace(/^\s*-\s*/, '');
+}
+
+function formatDisplayTitle(value) {
+  const stripped = stripEnem(value);
+  return stripped || String(value ?? '').trim();
+}
+
 function normalizeSnippet(value) {
   return String(value ?? "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
@@ -115,7 +131,7 @@ function shell() {
     <div class="app-shell">
       <header class="app-header py-3 mb-4">
         <div class="container-fluid px-4 d-flex flex-wrap align-items-center gap-3">
-          <div><h1 class="h4 mb-0">Provas ENEM para Professores</h1><small class="opacity-75">Crie avaliações fundamentadas a partir de questões do ENEM.</small></div>
+          <div><h1 class="h4 mb-0">Criador de Provas ENEM</h1><small class="opacity-75">Monte avaliações fundamentadas a partir de questões do ENEM.</small></div>
           <span id="db-status" class="badge rounded-pill">Carregando base local…</span>
           <div class="ms-auto d-flex gap-2 no-print">
             <button class="btn btn-sm btn-light" id="btn-save-share">Salvar e compartilhar prova</button>
@@ -124,25 +140,25 @@ function shell() {
       </header>
       <main class="container-fluid px-4 pb-5">
         <div id="app-alert" class="alert d-none" role="alert"></div>
-        <details id="welcome-notice" class="welcome-notice alert alert-info ${shouldShowWelcome() ? '' : 'd-none'}">
+        <details id="welcome-notice" class="welcome-notice alert ${shouldShowWelcome() ? '' : 'd-none'}">
           <summary>Como funciona esta ferramenta?</summary>
-          <div class="welcome-content small mt-2"><ul class="mb-0 ps-3"><li><strong>Finalidade:</strong> encontre questões confiáveis e crie rapidamente provas bem fundamentadas para ajudar seus alunos a se familiarizarem com o ENEM.</li><li><strong>Pesquisa:</strong> use a busca livre no contexto, na introdução e nas alternativas; combine ano, área, idioma e presença de imagens.</li><li><strong>Trabalhos salvos:</strong> a prova é salva automaticamente neste navegador. Use o botão de salvar e compartilhar para baixar um arquivo ou gerar um link para uso futuro.</li><li><strong>Variantes:</strong> gere de 1 a 5 versões da mesma prova. As versões reorganizam as alternativas e produzem gabaritos correspondentes para dificultar cópias.</li><li><strong>Imagens:</strong> as figuras continuam referenciadas pelas URLs originais e precisam de conexão quando forem carregadas.</li></ul></div>
-          <button type="button" class="btn btn-sm btn-outline-info mt-3" id="btn-dismiss-welcome">Entendi, não mostrar novamente</button>
+          <div class="welcome-content small mt-2"><ul class="mb-0 ps-3"><li><strong>Finalidade:</strong> encontre questões confiáveis e crie rapidamente provas bem fundamentadas para ajudar seus alunos a se familiarizarem com o ENEM.</li><li><strong>Pesquisa:</strong> use a busca por termos no contexto, na introdução e nas alternativas; combine ano, área/idioma e presença de imagens.</li><li><strong>Trabalhos salvos:</strong> a prova é salva automaticamente neste navegador. Use o botão de salvar e compartilhar para baixar um arquivo ou gerar um link para uso futuro.</li><li><strong>Variantes:</strong> gere de 1 a 5 versões da mesma prova. As versões reorganizam as alternativas e produzem gabaritos correspondentes para dificultar cópias.</li><li><strong>Imagens:</strong> as figuras continuam referenciadas pelas URLs originais e precisam de conexão quando forem carregadas.</li></ul></div>
+          <button type="button" class="btn btn-sm btn-outline-light mt-3" id="btn-dismiss-welcome">Entendi, não mostrar novamente</button>
         </details>
         <div class="row g-4">
           <section class="col-xl-7">
             <div class="card library-card">
               <div class="card-body">
-                <div class="d-flex align-items-center justify-content-between gap-3 mb-3"><div><h2 class="h5 mb-1">Biblioteca de questões</h2><p class="text-secondary small mb-0">Pesquise pelo contexto, introdução ou alternativas.</p></div><button class="btn btn-sm btn-outline-secondary" id="btn-clear-search">Limpar</button></div>
+                <div class="d-flex align-items-center justify-content-between gap-3 mb-3"><div><h2 class="h5 mb-1">Biblioteca de questões</h2><p class="text-secondary small mb-0">Pesquise pelo contexto, introdução ou alternativas.</p></div><button class="btn btn-sm btn-outline-secondary" id="btn-clear-search">Limpar buscas</button></div>
                 <form id="search-form" class="row g-2 mb-3">
-                  <div class="col-md-7"><label class="form-label" for="search-query">Busca livre</label><input class="form-control" id="search-query" placeholder="Ex.: fotossíntese, urbanização…"></div>
+                  <div class="col-md-7"><label class="form-label d-inline-flex align-items-center gap-1" for="search-query">Pesquise pelos termos que desejar <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-grid place-items-center p-0" id="search-help-icon" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="right" data-bs-html="true" title="Dica de pesquisa" data-bs-content="Digite vários termos separados por espaço. Todos devem aparecer (E). Use <code>OR</code> para alternar e <code>&quot;frase exata&quot;</code> para buscar a sequência literal." aria-label="Ajuda sobre sintaxe de pesquisa" style="width:1.05rem;height:1.05rem;font-size:.62rem;line-height:1;">?</button></label><input class="form-control" id="search-query" placeholder="Ex.: fotossíntese urbanização — use espaço para combinar (E), OR para OU, &quot;aspas&quot; para frase exata"></div>
                   <div class="col-md-5"><label class="form-label" for="filter-year">Ano</label><select class="form-select" id="filter-year"></select></div>
-                  <div class="col-md-4"><label class="form-label" for="filter-discipline">Área/disciplina</label><select class="form-select" id="filter-discipline"></select></div>
-                  <div class="col-md-4"><label class="form-label" for="filter-language">Idioma</label><select class="form-select" id="filter-language"></select></div>
-                  <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="filter-images"><label class="form-check-label" for="filter-images">Somente com imagens</label></div></div>
-                  <div class="col-12 d-flex justify-content-between align-items-center"><button class="btn btn-primary" type="submit">Pesquisar</button><div class="form-check"><input class="form-check-input" type="checkbox" id="filter-hide-selected"><label class="form-check-label small" for="filter-hide-selected">Ocultar selecionadas</label></div></div>
+                  <div class="col-md-8"><label class="form-label" for="filter-discipline">Área / disciplina / idioma</label><select class="form-select" id="filter-discipline"></select></div>
+                  <div class="col-md-4 d-none" aria-hidden="true"><label class="form-label" for="filter-language">Idioma</label><select class="form-select d-none" id="filter-language" tabindex="-1" aria-hidden="true"></select></div>
+                  <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="filter-images"><label class="form-check-label" for="filter-images">Somente questões com imagens</label></div></div>
+                  <div class="col-12 d-flex align-items-center gap-2"><button class="btn btn-primary" type="submit">Pesquisar</button><div class="form-check mb-0 ms-2"><input class="form-check-input" type="checkbox" id="filter-hide-selected"><label class="form-check-label small" for="filter-hide-selected">Ocultar questões já selecionadas</label></div></div>
                 </form>
-                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-2"><span id="result-count" class="small text-secondary" role="status" aria-live="polite">Nenhuma busca realizada</span><button class="btn btn-sm btn-outline-primary" id="btn-select-visible">Selecionar visíveis</button></div>
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-2"><span id="result-count" class="small text-secondary" role="status" aria-live="polite">Nenhuma busca realizada</span><button class="btn btn-sm btn-outline-primary" id="btn-select-visible">Selecionar todas as questões visíveis</button></div>
                 <div id="search-results" class="vstack gap-2"><div class="empty-state">Faça uma busca para explorar as questões.</div></div>
                 <div id="pagination" class="d-flex justify-content-center gap-2 mt-3"></div>
               </div>
@@ -150,13 +166,27 @@ function shell() {
           </section>
           <aside class="col-xl-5 sidebar">
             <div class="sticky-builder vstack gap-4">
-              <div class="card builder-card"><div class="card-body"><div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="h5 mb-1">Prova em construção</h2><p class="small text-secondary mb-0"><span id="selected-count">0</span> questões · <span id="total-points">0</span> pontos</p><p id="draft-status" class="draft-status text-secondary mb-0" role="status" aria-live="polite">Salvamento automático ativado neste navegador.</p></div><button class="btn btn-sm btn-outline-danger" id="btn-clear-proof">Limpar</button></div><div id="selected-list" class="vstack gap-2"><div class="empty-state">Selecione questões na biblioteca.</div></div></div></div>
-              <div class="card builder-card"><div class="card-body"><h2 class="h5">Identificação</h2><div class="row g-2" id="header-fields">
-                ${[['institution','Instituição'],['title','Nome da avaliação'],['subject','Disciplina'],['teacher','Professor'],['className','Turma'],['date','Data'],['period','Bimestre/período'],['duration','Duração'],['totalValue','Valor da prova']].map(([key,label]) => key === 'totalValue'
-                  ? `<div class="col-md-6"><label class="form-label" for="header-${key}">${label}</label><div class="input-group input-group-sm"><input class="form-control form-control-sm" id="header-${key}" data-header="${key}" inputmode="decimal"><button type="button" class="btn btn-outline-primary calculate-value-button" id="btn-calculate-value" title="Calcular valor da prova" aria-label="Calcular valor da prova"><span class="calculate-value-icon" aria-hidden="true">Σ</span><span class="visually-hidden">Calcular valor da prova</span></button></div></div>`
-                  : `<div class="col-md-6"><label class="form-label" for="header-${key}">${label}</label><input class="form-control form-control-sm" id="header-${key}" data-header="${key}"></div>`
-                ).join('')}
-                <div class="col-12"><label class="form-label" for="header-instructions">Instruções para os alunos</label><textarea class="form-control form-control-sm" rows="2" id="header-instructions" data-header="instructions"></textarea></div>
+              <div class="card builder-card"><div class="card-body"><div class="d-flex justify-content-between align-items-start gap-3 mb-3"><div><h2 class="h5 mb-1">Prova em construção</h2><p class="small text-secondary mb-0"><span id="selected-count">0</span> questões · <span id="total-points">0</span> pontos</p><p id="draft-status" class="draft-status text-secondary mb-0" role="status" aria-live="polite">Salvamento automático ativado neste navegador.</p><div id="selected-order-help" class="alert alert-light border small mt-2 mb-0 py-2 px-3"><div class="fw-semibold mb-1">Ordem das questões selecionadas</div><p class="mb-1">A lista abaixo define a ordem exata em que as questões aparecerão na prova.</p><ul class="mb-1 ps-3"><li><strong>Reposicionar:</strong> arraste o cartão ou use os botões <code>↑</code> para subir e <code>↓</code> para descer.</li><li><strong>Valor:</strong> informe os pontos no campo <em>Pontos</em> ao lado do título, seguido dos botões de ação (somente números e vírgula, ex.: <code>2,5</code>).</li></ul><div class="text-secondary small">O total de pontos é somado automaticamente no cabeçalho acima.</div></div></div><button class="btn btn-sm btn-outline-danger flex-shrink-0" id="btn-clear-proof" title="Limpar campo de questões selecionadas">Limpar seleção</button></div><div id="selected-list" class="vstack gap-2"><div class="empty-state">Selecione questões na biblioteca.</div></div></div></div>
+              <div class="card builder-card"><div class="card-body"><h2 class="h5">Cabeçalho da prova</h2><p class="small text-secondary mb-3">É neste campo que o cabeçalho oficial da prova é construído. Preencha os dados abaixo para que o PDF seja gerado com identificação completa da instituição, da avaliação e da turma.</p><div class="row g-2" id="header-fields">
+                ${(() => {
+                  const placeholders = {
+                    institution: 'Ex.: Escola Estadual Professor José Silva',
+                    title: 'Ex.: Avaliação Bimestral de Ciências da Natureza – 3º Ano',
+                    subject: 'Ex.: Biologia / Física / Química',
+                    teacher: 'Ex.: Profª. Maria Oliveira',
+                    className: 'Ex.: 3º Ano A – Manhã',
+                    date: 'Ex.: 25/09/2026',
+                    period: 'Ex.: 2º Bimestre',
+                    duration: 'Ex.: 2h30 ou 150 minutos',
+                    totalValue: 'Clique em Σ para calcular automaticamente',
+                    instructions: 'Ex.: Leia com atenção, assinale apenas uma alternativa por questão e use caneta azul ou preta.'
+                  };
+                  return [['institution','Instituição'],['title','Nome da avaliação'],['subject','Disciplina'],['teacher','Professor'],['className','Turma'],['date','Data'],['period','Bimestre/período'],['duration','Duração'],['totalValue','Valor da prova']].map(([key,label]) => key === 'totalValue'
+                    ? `<div class="col-md-6"><label class="form-label" for="header-${key}">${label}</label><div class="input-group input-group-sm"><input class="form-control form-control-sm" id="header-${key}" data-header="${key}" inputmode="decimal" placeholder="${placeholders[key]}"><button type="button" class="btn btn-outline-primary calculate-value-button" id="btn-calculate-value" title="Calcular automaticamente a partir dos pontos das questões" aria-label="Calcular valor da prova"><span class="calculate-value-icon" aria-hidden="true">Σ</span><span class="visually-hidden">Calcular valor da prova</span></button></div></div>`
+                    : `<div class="col-md-6"><label class="form-label" for="header-${key}">${label}</label><input class="form-control form-control-sm" id="header-${key}" data-header="${key}" placeholder="${placeholders[key]}"></div>`
+                  ).join('');
+                })()}
+                <div class="col-12"><label class="form-label" for="header-instructions">Instruções para os alunos</label><textarea class="form-control form-control-sm" rows="2" id="header-instructions" data-header="instructions" placeholder="Ex.: Leia com atenção, assinale apenas uma alternativa por questão e use caneta azul ou preta."></textarea></div>
               </div></div></div>
               <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar a prova e exportar</h2><p class="small text-secondary mb-3">Escolha quantas versões você precisa e entenda o que cada material entrega antes de baixar.</p><div class="row g-3 mb-3"><div class="col-12"><label class="form-label" for="variants-count">Quantidade de variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><div id="variants-help" class="form-text">Uma variante é uma versão da mesma prova com outra ordem de alternativas. A Variante A preserva a ordem original; as seguintes deslocam a resposta correta e geram um gabarito próprio.</div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar alternativas incorretas</label><div id="shuffle-help" class="form-text ms-4">Também reorganiza, de forma determinística, as alternativas erradas. Desmarcado, elas mantêm a ordem original e apenas a posição da correta muda.</div></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label><div id="answer-sheet-help" class="form-text ms-4">Acrescenta uma folha compacta para o aluno preencher, com identificação da variante e espaço para entregar junto com a prova.</div></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar prova em PDF</strong><small>Versão do aluno · pronta para imprimir</small></span></button><p class="pdf-action-help">O navegador abrirá a visualização de impressão para você salvar a prova em PDF. O gabarito não aparece nesta versão.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">Baixar gabarito do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar versão ZIP</button></div></div></div>
             </div>
@@ -195,8 +225,11 @@ function shell() {
 
 function renderFilters() {
   $('#filter-year').html(selectOptions(state.filtersData.years, state.filters.year, 'Todos os anos'));
-  $('#filter-discipline').html(selectOptions(state.filtersData.disciplines, state.filters.discipline, 'Todas as áreas'));
-  $('#filter-language').html(selectOptions(state.filtersData.languages, state.filters.language, 'Todos os idiomas'));
+  const currentCombined = state.filters.language ? `lang:${state.filters.language}` : (state.filters.discipline || '');
+  const disciplineOptions = (state.filtersData.disciplines || []).map((item) => ({ value: item.value ?? item, label: item.label ?? item }));
+  const languageOptions = (state.filtersData.languages || []).map((item) => ({ value: `lang:${item.value ?? item}`, label: `${item.label ?? item} (Idioma)` }));
+  const combined = [...disciplineOptions, ...languageOptions];
+  $('#filter-discipline').html(selectOptions(combined, currentCombined, 'Todas as áreas / idiomas'));
 }
 
 function flashSelectedQuestion(id) {
@@ -214,7 +247,13 @@ function renderResults() {
   if (!state.results.length) {
     $('#search-results').html('<div class="empty-state">Nenhuma questão corresponde aos filtros.</div>');
   } else {
-    $('#search-results').html(state.results.map((result) => `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div class="d-flex justify-content-between gap-2"><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(result.title)}</button><span class="badge text-bg-light">${escapeHtml(result.year)}${result.language ? ` · ${escapeHtml(result.language)}` : ''}</span></div><div class="small text-secondary">${escapeHtml(result.discipline || 'Sem disciplina')}${result.hasImages ? ' · 🖼️ imagens' : ''}</div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`).join(''));
+    $('#search-results').html(state.results.map((result) => {
+      const disciplineLabel = (state.filtersData.disciplines.find((d) => String(d.value ?? d) === String(result.discipline))?.label) || result.discipline || 'Sem disciplina';
+      const languageLabel = result.language ? ((state.filtersData.languages.find((l) => String(l.value ?? l) === String(result.language))?.label) || result.language) : '';
+      const areaInfo = languageLabel ? `${disciplineLabel} · ${languageLabel}` : disciplineLabel;
+      const areaWithImage = result.hasImages ? `${areaInfo} · 🖼️ imagens` : areaInfo;
+      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatDisplayTitle(result.title))} · ${escapeHtml(areaWithImage)}</button></div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
+    }).join(''));
   }
   const pages = Math.ceil(state.totalResults / state.pageSize);
   $('#pagination').html(pages > 1 ? `<button class="btn btn-sm btn-outline-secondary" data-page="${state.page - 1}" ${state.page <= 1 ? 'disabled' : ''}>Anterior</button><span class="small align-self-center">Página ${state.page} de ${pages}</span><button class="btn btn-sm btn-outline-secondary" data-page="${state.page + 1}" ${state.page >= pages ? 'disabled' : ''}>Próxima</button>` : '');
@@ -229,7 +268,8 @@ function renderSelected() {
   }
   $('#selected-list').html(state.selected.map((item, index) => {
     const question = state.questionCache.get(item.id);
-    return `<div class="selected-item card card-body p-2" draggable="true" data-selected-id="${item.id}"><div class="d-flex align-items-center gap-2"><span class="badge text-bg-primary">${index + 1}</span><button class="btn btn-link p-0 text-start text-decoration-none flex-grow-1 selected-preview" data-preview-id="${item.id}">${escapeHtml(question?.title || `Questão ${item.id}`)}</button><button class="btn btn-sm btn-outline-secondary move-up" data-selected-id="${item.id}" title="Mover para cima">↑</button><button class="btn btn-sm btn-outline-secondary move-down" data-selected-id="${item.id}" title="Mover para baixo">↓</button><button class="btn btn-sm btn-outline-danger remove-selected" data-selected-id="${item.id}" title="Remover">×</button></div><div class="input-group input-group-sm mt-2"><span class="input-group-text">Pontos</span><input class="form-control selected-points" type="text" inputmode="decimal" autocomplete="off" value="${escapeHtml(item.points ?? 1)}" data-selected-id="${item.id}"></div></div>`;
+    const displayTitle = formatDisplayTitle(question?.title || `Questão ${item.id}`);
+    return `<div class="selected-item card card-body p-2" draggable="true" data-selected-id="${item.id}"><div class="d-flex align-items-center gap-2"><span class="badge text-bg-primary">${index + 1}</span><button class="btn btn-link p-0 text-start text-decoration-none flex-grow-1 selected-preview" data-preview-id="${item.id}">${escapeHtml(displayTitle)}</button><input class="form-control form-control-sm selected-points flex-shrink-0" type="text" inputmode="decimal" autocomplete="off" placeholder="Pontos" pattern="[0-9,]*" value="${escapeHtml(item.points ?? 1)}" data-selected-id="${item.id}" style="width:5.2rem;max-width:6rem;text-align:right;" aria-label="Pontos da questão ${index + 1}"><button class="btn btn-sm btn-outline-secondary move-up" data-selected-id="${item.id}" title="Mover para cima">↑</button><button class="btn btn-sm btn-outline-secondary move-down" data-selected-id="${item.id}" title="Mover para baixo">↓</button><button class="btn btn-sm btn-outline-danger remove-selected" data-selected-id="${item.id}" title="Remover">×</button></div></div>`;
   }).join(''));
 }
 
@@ -293,8 +333,14 @@ async function performSearch(page = 1, { notify = false } = {}) {
   state.page = page;
   state.filters.q = $('#search-query').val().trim();
   state.filters.year = $('#filter-year').val();
-  state.filters.discipline = $('#filter-discipline').val();
-  state.filters.language = $('#filter-language').val();
+  const combined = $('#filter-discipline').val();
+  if (combined && String(combined).startsWith('lang:')) {
+    state.filters.language = String(combined).slice(5);
+    state.filters.discipline = '';
+  } else {
+    state.filters.discipline = combined || '';
+    state.filters.language = '';
+  }
   state.filters.hasImages = $('#filter-images').prop('checked') ? true : undefined;
   const hideSelected = $('#filter-hide-selected').prop('checked');
   setSearchBusy(true);
@@ -520,8 +566,10 @@ async function restoreBackup(value) {
 }
 
 function bindEvents() {
+  const helpIcon = document.getElementById('search-help-icon');
+  if (helpIcon) bootstrap.Popover.getOrCreateInstance(helpIcon, { trigger: 'focus', html: true, sanitize: false });
   $('#search-form').on('submit', (event) => { event.preventDefault(); void performSearch(1, { notify: true }); });
-  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline,#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); void performSearch(1, { notify: true }); });
+  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline').val(''); if ($('#filter-language').length) $('#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); state.filters.discipline = ''; state.filters.language = ''; void performSearch(1, { notify: true }); });
   $('#search-results').on('change', '.question-select', (event) => { void setSelected(Number(event.currentTarget.dataset.questionId), event.currentTarget.checked).catch((error) => showToast(error.message, 'danger')); });
   $('#search-results').on('click', '[data-preview-id]', (event) => { event.preventDefault(); void showPreview(Number(event.currentTarget.dataset.previewId)); });
   $('#btn-select-visible').on('click', async () => {
@@ -537,6 +585,7 @@ function bindEvents() {
   $('#selected-list').on('click', '.move-up', (event) => moveSelected(Number(event.currentTarget.dataset.selectedId), -1));
   $('#selected-list').on('click', '.move-down', (event) => moveSelected(Number(event.currentTarget.dataset.selectedId), 1));
   $('#selected-list').on('click', '[data-preview-id]', (event) => { void showPreview(Number(event.currentTarget.dataset.previewId)); });
+  $('#selected-list').on('input', '.selected-points', (event) => { const v = event.currentTarget.value; const filtered = v.replace(/[^0-9,]/g, ''); if (v !== filtered) event.currentTarget.value = filtered; });
   $('#selected-list').on('change', '.selected-points', (event) => { const item = state.selected.find((candidate) => candidate.id === Number(event.currentTarget.dataset.selectedId)); if (item) { const raw = String(event.currentTarget.value).trim().replace(',', '.'); item.points = Math.max(0, Number(raw) || 0); scheduleDraft(); renderSelected(); schedulePreview(); } });
   $('#selected-list').on('dragstart', '.selected-item', (event) => { draggedId = Number(event.currentTarget.dataset.selectedId); event.currentTarget.classList.add('dragging'); });
   $('#selected-list').on('dragend', '.selected-item', (event) => { event.currentTarget.classList.remove('dragging'); draggedId = null; });
