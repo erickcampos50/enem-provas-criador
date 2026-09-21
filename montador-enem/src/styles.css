@@ -74,7 +74,7 @@ body { background: var(--app-bg); color: var(--app-text); font-family: -apple-sy
 .calculate-value-button:hover, .calculate-value-button:focus-visible { color: #fff; background: var(--app-accent); }
 .calculate-value-icon { transform: translateY(-.04em); }
 .selected-points { text-align: right; }
-#search-help-icon { width: 1.05rem; height: 1.05rem; border-radius: 50%; border-width: 1.2px; font-size: .62rem; font-weight: 700; line-height: 1; display: inline-grid; place-items: center; padding: 0; flex: 0 0 1.05rem; }
-#search-help-icon:focus-visible { box-shadow: 0 0 0 .2rem rgba(13,110,253,.25); }
+#search-help-icon, #selected-help-icon { width: 1.05rem; height: 1.05rem; border-radius: 50%; border-width: 1.2px; font-size: .62rem; font-weight: 700; line-height: 1; display: inline-grid; place-items: center; padding: 0; flex: 0 0 1.05rem; }
+#search-help-icon:focus-visible, #selected-help-icon:focus-visible { box-shadow: 0 0 0 .2rem rgba(13,110,253,.25); }
 .popover { max-width: 320px; }
 .popover-body code { background: #f1f5f9; padding: .1rem .25rem; border-radius: .25rem; }
