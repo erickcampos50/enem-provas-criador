@@ -132,7 +132,13 @@ function runProcess(command, args, { input, allowFailure = false } = {}) {
         resolveProcess({ code, stdout, stderr });
       }
     });
-    child.stdin.end(input ?? '');
+    child.stdin.on('error', (error) => {
+      if (error.code !== 'EPIPE') {
+        rejectProcess(new EnrichmentError(`Falha ao escrever em ${command}: ${error.message}`, { cause: error }));
+      }
+    });
+    if (input === undefined) child.stdin.end();
+    else child.stdin.end(input);
   });
 }
 
