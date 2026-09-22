@@ -61,6 +61,28 @@ function formatDisplayTitle(value) {
   return stripped || String(value ?? '').trim();
 }
 
+function formatQuestionHeading(question, fallbackTitle = '') {
+  const number = Number(question?.number);
+  const year = Number(question?.year);
+  const hasNumber = Number.isFinite(number);
+  const hasYear = Number.isFinite(year);
+  const prefix = [
+    hasNumber ? 'Q' + number : null,
+    hasYear ? String(year) : null,
+  ].filter(Boolean).join(' ');
+
+  const rawTitle = String(question?.title ?? fallbackTitle ?? '').trim();
+  const genericTitlePattern = hasNumber && hasYear
+    ? new RegExp('^\\s*Quest[aã]o\\s+' + number + '\\s*(?:[-–—:]\\s*)?(?:ENEM\\s*)?' + year + '\\s*$', 'i')
+    : null;
+  const title = genericTitlePattern?.test(rawTitle)
+    ? ''
+    : formatDisplayTitle(rawTitle);
+
+  if (prefix && title) return prefix + ' — ' + title;
+  return prefix || title || rawTitle;
+}
+
 function normalizeSnippet(value) {
   return String(value ?? "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
@@ -254,7 +276,7 @@ function renderResults() {
       const languageLabel = result.language ? ((state.filtersData.languages.find((l) => String(l.value ?? l) === String(result.language))?.label) || result.language) : '';
       const areaInfo = languageLabel ? `${disciplineLabel} · ${languageLabel}` : disciplineLabel;
       const areaWithImage = result.hasImages ? `${areaInfo} · 🖼️ imagens` : areaInfo;
-      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatDisplayTitle(result.title))} · ${escapeHtml(areaWithImage)}</button></div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
+      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatQuestionHeading(result))} · ${escapeHtml(areaWithImage)}</button></div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
     }).join(''));
   }
   const pages = Math.ceil(state.totalResults / state.pageSize);
@@ -270,7 +292,7 @@ function renderSelected() {
   }
   $('#selected-list').html(state.selected.map((item, index) => {
     const question = state.questionCache.get(item.id);
-    const displayTitle = formatDisplayTitle(question?.title || `Questão ${item.id}`);
+    const displayTitle = formatQuestionHeading(question, `Questão ${item.id}`);
     return `<div class="selected-item card card-body p-2" draggable="true" data-selected-id="${item.id}"><div class="d-flex align-items-center gap-2"><span class="badge text-bg-primary">${index + 1}</span><button class="btn btn-link p-0 text-start text-decoration-none flex-grow-1 selected-preview" data-preview-id="${item.id}">${escapeHtml(displayTitle)}</button><input class="form-control form-control-sm selected-points flex-shrink-0" type="text" inputmode="decimal" autocomplete="off" placeholder="Pontos" pattern="[0-9,]*" value="${escapeHtml(item.points ?? 1)}" data-selected-id="${item.id}" style="width:5.2rem;max-width:6rem;text-align:right;" aria-label="Pontos da questão ${index + 1}"><button class="btn btn-sm btn-outline-secondary move-up" data-selected-id="${item.id}" title="Mover para cima">↑</button><button class="btn btn-sm btn-outline-secondary move-down" data-selected-id="${item.id}" title="Mover para baixo">↓</button><button class="btn btn-sm btn-outline-danger remove-selected" data-selected-id="${item.id}" title="Remover">×</button></div></div>`;
   }).join(''));
   if (modalQuestionId !== null) updateModalFooterState();
@@ -279,7 +301,19 @@ function renderSelected() {
 function renderQuestion(question, showAnswer = false) {
   const files = getUniqueQuestionFiles(question).map((url, index) => `<img src="${escapeHtml(url)}" alt="Imagem de apoio ${index + 1}" class="question-image">`).join('');
   const alternatives = (question.alternatives || []).map((alternative) => `<div class="alternative ${showAnswer && alternative.isCorrect ? 'correct' : ''}" data-correct="${alternative.isCorrect ? 'true' : 'false'}"><span class="alternative-letter">${escapeHtml(alternative.letter)})</span><div>${alternative.text ? renderMarkdown(alternative.text) : alternative.file ? `<img src="${escapeHtml(alternative.file)}" alt="Imagem da alternativa ${escapeHtml(alternative.letter)}" class="question-image">` : '<span>Sem texto ou imagem.</span>'}</div></div>`).join('');
-  return `<div><h3 class="h5">${escapeHtml(question.title)}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${escapeHtml(question.year)} · ${escapeHtml(question.discipline || 'Sem disciplina')}${question.language ? ` · ${escapeHtml(question.language)}` : ''}</div></div>`;
+  const metadata = [
+    question.year,
+    question.discipline || 'Sem disciplina',
+    question.language || null,
+    question.enrichment?.subject || null,
+    question.enrichment?.topic && question.enrichment.topic !== question.enrichment?.subject ? question.enrichment.topic : null,
+    question.inep?.skillCode != null ? `H${question.inep.skillCode}` : null,
+    question.inep?.itemCode != null ? `Item INEP ${question.inep.itemCode}` : null,
+  ].filter(Boolean).map((value) => escapeHtml(value)).join(' · ');
+  const provenance = question.sourceTitle && question.sourceTitle !== question.title
+    ? `<div class="small text-secondary mt-1">Título da fonte: ${escapeHtml(question.sourceTitle)}</div>`
+    : '';
+  return `<div><h3 class="h5">${escapeHtml(formatQuestionHeading(question))}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${metadata}</div>${provenance}</div>`;
 }
 
 function updateModalFooterState() {

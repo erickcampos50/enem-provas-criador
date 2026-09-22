@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { formatQuestionSource, getUniqueQuestionFiles } from '../src/exports.js';
+import { formatQuestionOriginHeading, formatQuestionSource, getUniqueQuestionFiles } from '../src/exports.js';
 
 const contextImage = 'https://example.test/context.png';
 const extraImage = 'https://example.test/extra.png';
@@ -48,4 +48,39 @@ test('usa somente as instruções fornecidas pelo professor', () => {
 test('exibe a fonte da questão de forma discreta e sem repetir o identificador', () => {
   assert.equal(formatQuestionSource('Questão 42 - ENEM 2023'), 'ENEM 2023');
   assert.equal(formatQuestionSource('Banco externo'), 'Banco externo');
+});
+
+
+test('identifica a questão original do ENEM antes dos descritores na prova', () => {
+  assert.equal(
+    formatQuestionOriginHeading({
+      number: 52,
+      year: 2023,
+      title: 'Valores éticos e estruturação política: Paulo Freire e educação',
+    }),
+    'Q52 2023 — Valores éticos e estruturação política: Paulo Freire e educação',
+  );
+});
+
+test('não repete o título genérico de origem quando não há descritor enriquecido', () => {
+  assert.equal(
+    formatQuestionOriginHeading({
+      number: 52,
+      year: 2023,
+      title: 'Questão 52 - ENEM 2023',
+    }),
+    'Q52 2023',
+  );
+});
+
+
+test('remove Questão N do fim do descritor na prova', () => {
+  assert.equal(
+    formatQuestionOriginHeading({
+      number: 46,
+      year: 2023,
+      title: 'Representações gráficas e cartográficas do espaço · Questão 46',
+    }),
+    'Q46 2023 — Representações gráficas e cartográficas do espaço',
+  );
 });

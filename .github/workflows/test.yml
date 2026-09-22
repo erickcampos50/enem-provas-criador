@@ -1,0 +1,37 @@
+name: Test Montador ENEM
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - feature/inep-enrichment
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: montador-enem/package-lock.json
+
+      - name: Install dependencies
+        working-directory: montador-enem
+        run: npm ci
+
+      - name: Run unit tests
+        working-directory: montador-enem
+        run: npm test
+
+      - name: Build
+        working-directory: montador-enem
+        run: npm run build

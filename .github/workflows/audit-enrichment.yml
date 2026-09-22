@@ -1,0 +1,71 @@
+name: Audit ENEM Enrichment
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/audit-enrichment.yml"
+      - "data/inep/ITENS_PROVA_*.csv"
+      - "montador-enem/scripts/enrich-inep.mjs"
+      - "montador-enem/scripts/inep-enrichment-lib.mjs"
+      - "montador-enem/scripts/inep-skill-labels.mjs"
+
+concurrency:
+  group: audit-enem-enrichment
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: montador-enem/package-lock.json
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sqlite3 unzip
+
+      - name: Install application dependencies
+        working-directory: montador-enem
+        run: npm ci
+
+      - name: Audit all years without changing SQLite
+        working-directory: montador-enem
+        run: |
+          node scripts/enrich-inep.mjs \
+            --dry-run \
+            --safe-min-coverage 0.93 \
+            --report-json ../data/inep/audit/latest.json \
+            --report-md ../data/inep/audit/latest.md \
+            --verbose
+
+      - name: Validate application
+        working-directory: montador-enem
+        run: npm test
+
+      - name: Commit audit report
+        run: |
+          if [ -z "$(git status --porcelain -- data/inep/audit/latest.json data/inep/audit/latest.md)" ]; then
+            echo "Audit report unchanged."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/inep/audit/latest.json data/inep/audit/latest.md
+          git commit -m "data: audit INEP enrichment across ENEM years"
+          git pull --rebase origin main
+          git push

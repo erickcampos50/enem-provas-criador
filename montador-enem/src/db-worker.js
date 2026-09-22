@@ -7,7 +7,74 @@ const MAX_PAGE_SIZE = 100;
 let sqlite3Promise;
 let sqlite3;
 let database;
+let databaseFeatures = { inepMetadata: false, enrichment: false };
 let messageQueue = Promise.resolve();
+
+function optionalQuestionJoins(alias = 'q') {
+  let joins = '';
+  if (databaseFeatures.inepMetadata) {
+    joins += `\nLEFT JOIN question_inep_metadata AS im ON im.question_id = ${alias}.id`;
+  }
+  if (databaseFeatures.enrichment) {
+    joins += `\nLEFT JOIN question_enrichment AS qe ON qe.question_id = ${alias}.id`;
+  }
+  return joins;
+}
+
+function effectiveDisciplineSql(alias = 'q') {
+  if (!databaseFeatures.inepMetadata) return `${alias}.discipline`;
+  return `COALESCE(
+    CASE im.area
+      WHEN 'LC' THEN 'linguagens'
+      WHEN 'CH' THEN 'ciencias-humanas'
+      WHEN 'CN' THEN 'ciencias-natureza'
+      WHEN 'MT' THEN 'matematica'
+    END,
+    ${alias}.discipline
+  )`;
+}
+
+function effectiveTitleSql(alias = 'q') {
+  return databaseFeatures.enrichment
+    ? `COALESCE(qe.display_title, ${alias}.title)`
+    : `${alias}.title`;
+}
+
+function optionalInepSelectSql() {
+  if (!databaseFeatures.inepMetadata) {
+    return `NULL AS inep_item_code,
+            NULL AS inep_area,
+            NULL AS inep_skill_code,
+            NULL AS inep_exam_code,
+            NULL AS inep_position,
+            NULL AS inep_book_color,
+            NULL AS inep_tri_a,
+            NULL AS inep_tri_b,
+            NULL AS inep_tri_c,
+            NULL AS inep_match_score`;
+  }
+  return `im.item_code AS inep_item_code,
+          im.area AS inep_area,
+          im.skill_code AS inep_skill_code,
+          im.exam_code AS inep_exam_code,
+          im.position AS inep_position,
+          im.book_color AS inep_book_color,
+          im.tri_a AS inep_tri_a,
+          im.tri_b AS inep_tri_b,
+          im.tri_c AS inep_tri_c,
+          im.match_score AS inep_match_score`;
+}
+
+function optionalEnrichmentSelectSql() {
+  if (!databaseFeatures.enrichment) {
+    return `NULL AS enrichment_subject,
+            NULL AS enrichment_topic,
+            NULL AS enrichment_source`;
+  }
+  return `qe.subject AS enrichment_subject,
+          qe.topic AS enrichment_topic,
+          qe.source AS enrichment_source`;
+}
 
 function isRecord(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -134,6 +201,7 @@ function getInitBytes(message) {
 function closeDatabase() {
   const current = database;
   database = undefined;
+  databaseFeatures = { inepMetadata: false, enrichment: false };
   if (current) current.close();
 }
 
@@ -196,6 +264,18 @@ async function initDatabase(message) {
       );
     }
 
+    const optionalTables = executeRows(
+      nextDatabase,
+      `SELECT name
+         FROM sqlite_schema
+        WHERE type = 'table'
+          AND name IN ('question_inep_metadata', 'question_enrichment')`,
+    ).map((row) => row.name);
+    databaseFeatures = {
+      inepMetadata: optionalTables.includes('question_inep_metadata'),
+      enrichment: optionalTables.includes('question_enrichment'),
+    };
+
     const counts = executeRows(nextDatabase, 'SELECT (SELECT count(*) FROM questions) AS question_count, (SELECT count(*) FROM exams) AS exam_count')[0];
     database = nextDatabase;
 
@@ -204,6 +284,7 @@ async function initDatabase(message) {
       version: sqlite3.version?.libVersion ?? null,
       questionCount: Number(asNumber(counts?.question_count) ?? 0),
       examCount: Number(asNumber(counts?.exam_count) ?? 0),
+      features: { ...databaseFeatures },
     };
   } catch (error) {
     if (pointerOwnedByDatabase) {
@@ -477,7 +558,7 @@ function buildSearchQuery(options) {
     bind.$year = options.year;
   }
   if (options.discipline !== undefined) {
-    conditions.push('q.discipline = $discipline');
+    conditions.push(`${effectiveDisciplineSql('q')} = $discipline`);
     bind.$discipline = options.discipline;
   }
   if (options.language !== undefined) {
@@ -513,6 +594,7 @@ function mapSearchResult(row) {
     number: Number(asNumber(row.number)),
     language: row.language ?? null,
     title: row.title,
+    sourceTitle: row.source_title ?? row.title,
     discipline: row.discipline ?? null,
     hasImages: Boolean(Number(asNumber(row.has_images))),
     snippet: row.snippet ?? null,
@@ -528,6 +610,7 @@ function searchQuestions(payload) {
     db,
     `SELECT count(*) AS total
        FROM questions AS q
+       ${optionalQuestionJoins('q')}
        ${query.join}
        ${query.where}`,
     query.bind,
@@ -563,11 +646,13 @@ function searchQuestions(payload) {
               q.year,
               q.number,
               q.language,
-              q.title,
-              q.discipline,
+              ${effectiveTitleSql('q')} AS title,
+              q.title AS source_title,
+              ${effectiveDisciplineSql('q')} AS discipline,
               q.context,
               q.alternatives_introduction
          FROM questions AS q
+         ${optionalQuestionJoins('q')}
          ${query.join}
          ${query.where}
         ORDER BY q.year DESC, q.number ASC, q.id ASC
@@ -578,6 +663,7 @@ function searchQuestions(payload) {
            paged.number,
            paged.language,
            paged.title,
+           paged.source_title,
            paged.discipline,
            ${snippetSelect}
            EXISTS (
@@ -630,24 +716,36 @@ function getQuestion(payload) {
   if (id !== undefined) {
     rows = executeRows(
       db,
-      `SELECT id, year, number, language, title, discipline, context,
-              alternatives_introduction, correct_alternative, source_path
-         FROM questions
-        WHERE id = $id`,
+      `SELECT q.id, q.year, q.number, q.language,
+              ${effectiveTitleSql('q')} AS title,
+              q.title AS source_title,
+              ${effectiveDisciplineSql('q')} AS discipline,
+              q.context, q.alternatives_introduction, q.correct_alternative, q.source_path,
+              ${optionalInepSelectSql()},
+              ${optionalEnrichmentSelectSql()}
+         FROM questions AS q
+         ${optionalQuestionJoins('q')}
+        WHERE q.id = $id`,
       { $id: id },
     );
   } else {
     const bind = { $year: year, $number: number };
-    const conditions = ['year = $year', 'number = $number'];
+    const conditions = ['q.year = $year', 'q.number = $number'];
     if (language !== undefined) {
-      conditions.push('language = $language');
+      conditions.push('q.language = $language');
       bind.$language = language;
     }
     rows = executeRows(
       db,
-      `SELECT id, year, number, language, title, discipline, context,
-              alternatives_introduction, correct_alternative, source_path
-         FROM questions
+      `SELECT q.id, q.year, q.number, q.language,
+              ${effectiveTitleSql('q')} AS title,
+              q.title AS source_title,
+              ${effectiveDisciplineSql('q')} AS discipline,
+              q.context, q.alternatives_introduction, q.correct_alternative, q.source_path,
+              ${optionalInepSelectSql()},
+              ${optionalEnrichmentSelectSql()}
+         FROM questions AS q
+         ${optionalQuestionJoins('q')}
         WHERE ${conditions.join(' AND ')}
         LIMIT 2`,
       bind,
@@ -698,6 +796,7 @@ function getQuestion(payload) {
     number: Number(asNumber(questionRow.number)),
     language: questionRow.language ?? null,
     title: questionRow.title,
+    sourceTitle: questionRow.source_title ?? questionRow.title,
     discipline: questionRow.discipline ?? null,
     context: questionRow.context ?? null,
     alternativesIntroduction: questionRow.alternatives_introduction ?? null,
@@ -706,6 +805,25 @@ function getQuestion(payload) {
     alternatives,
     files: urls,
     urls,
+    inep: questionRow.inep_item_code == null ? null : {
+      itemCode: Number(asNumber(questionRow.inep_item_code)),
+      area: questionRow.inep_area,
+      skillCode: questionRow.inep_skill_code == null ? null : Number(asNumber(questionRow.inep_skill_code)),
+      examCode: Number(asNumber(questionRow.inep_exam_code)),
+      position: Number(asNumber(questionRow.inep_position)),
+      bookColor: questionRow.inep_book_color ?? null,
+      tri: {
+        a: questionRow.inep_tri_a == null ? null : Number(asNumber(questionRow.inep_tri_a)),
+        b: questionRow.inep_tri_b == null ? null : Number(asNumber(questionRow.inep_tri_b)),
+        c: questionRow.inep_tri_c == null ? null : Number(asNumber(questionRow.inep_tri_c)),
+      },
+      matchScore: questionRow.inep_match_score == null ? null : Number(asNumber(questionRow.inep_match_score)),
+    },
+    enrichment: questionRow.enrichment_source == null ? null : {
+      subject: questionRow.enrichment_subject ?? null,
+      topic: questionRow.enrichment_topic ?? null,
+      source: questionRow.enrichment_source,
+    },
   };
 
   return question;

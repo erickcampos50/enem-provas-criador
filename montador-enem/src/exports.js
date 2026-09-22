@@ -131,6 +131,34 @@ export function formatQuestionSource(value) {
     .trim();
 }
 
+export function formatQuestionOriginHeading(question) {
+  const number = Number(question?.number);
+  const year = Number(question?.year);
+  const hasNumber = Number.isFinite(number);
+  const hasYear = Number.isFinite(year);
+  const prefix = [
+    hasNumber ? 'Q' + number : null,
+    hasYear ? String(year) : null,
+  ].filter(Boolean).join(' ');
+
+  let descriptor = formatQuestionSource(question?.title);
+  if (hasNumber) {
+    const redundantQuestion = descriptor.match(/\s*(?:[·•|/\-–—:]\s*)?Quest[aã]o\s+(\d+)\s*$/i);
+    if (redundantQuestion && Number(redundantQuestion[1]) === number) {
+      descriptor = descriptor.slice(0, redundantQuestion.index).trim();
+    }
+  }
+  if (hasYear) {
+    const genericSource = 'ENEM ' + year;
+    if (descriptor.toLocaleUpperCase('pt-BR') === genericSource.toLocaleUpperCase('pt-BR')) {
+      descriptor = '';
+    }
+  }
+
+  if (prefix && descriptor) return prefix + ' — ' + descriptor;
+  return prefix || descriptor;
+}
+
 function questionHtml(question, number, teacher) {
   const alternatives = (question.alternatives ?? []).map((alternative) => {
     const alternativeFile = alternative.file ?? alternative.fileUrl;
@@ -147,8 +175,8 @@ function questionHtml(question, number, teacher) {
   }).join('');
   const files = getUniqueQuestionFiles(question).map((url, index) => imageMarkup(url, 'Imagem de apoio ' + (index + 1))).join('');
   const points = formatPoints(question.points ?? 1);
-  const source = formatQuestionSource(question.title);
-  const sourceMarkup = source ? '<div class="question-source">(' + escapeHtml(source) + ')</div>' : '';
+  const source = formatQuestionOriginHeading(question);
+  const sourceMarkup = source ? '<div class="question-source">' + escapeHtml(source) + '</div>' : '';
   return '<section class="exam-question">' +
     '<div class="question-heading">' +
       '<span class="question-index">' + String(number).padStart(2, '0') + '</span>' +
@@ -241,7 +269,7 @@ export function renderMarkdownDocument(header, variant, teacher, includeAnswerSh
   if (header.instructions) lines.push('', header.instructions);
   lines.push('');
   variant.questions.forEach((question, index) => {
-    lines.push(`## ${index + 1}. ${question.title}`, '', question.context ?? '');
+    lines.push(`## ${index + 1}. ${formatQuestionOriginHeading(question)}`, '', question.context ?? '');
     getUniqueQuestionFiles(question).forEach((url, imageIndex) => lines.push('', `![Imagem de apoio ${imageIndex + 1}](${url})`));
     if (question.alternativesIntroduction) lines.push('', question.alternativesIntroduction);
     question.alternatives.forEach((alternative) => {
