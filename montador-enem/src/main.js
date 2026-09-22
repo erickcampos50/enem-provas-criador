@@ -59,6 +59,84 @@ function formatDisplayTitle(value) {
   return stripped || String(value ?? '').trim();
 }
 
+function formatQuestionHeading(question, fallbackTitle = '') {
+  const number = Number(question?.number);
+  const year = Number(question?.year);
+  const hasNumber = Number.isFinite(number);
+  const hasYear = Number.isFinite(year);
+  const prefix = [
+    hasNumber ? `Q${number}` : null,
+    hasYear ? String(year) : null,
+  ].filter(Boolean).join(' ');
+
+  const rawTitle = String(question?.title ?? fallbackTitle ?? '').trim();
+  const genericTitlePattern = hasNumber && hasYear
+    ? new RegExp(`^\\s*Quest[aã]o\\s+${number}\\s*(?:[-–—:]\\s*)?(?:ENEM\\s*)?${year}\\s*import $ from 'jquery';
+import * as bootstrap from 'bootstrap';
+import './styles.css';
+import { DbClient } from './db-client.js';
+import { loadDatabaseBytes } from './cache.js';
+import { buildVariants } from './variants.js';
+import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
+import { renderMarkdown } from './markdown.js';
+import { clearDraft, dismissWelcome, downloadText, encodeProofLink, exportProof, parseProof, parseProofLink, readDraft, shouldShowWelcome, writeDraft } from './storage.js';
+
+window.$ = $;
+window.bootstrap = bootstrap;
+
+const db = new DbClient();
+const state = {
+  filters: { q: '', year: '', discipline: '', language: '', hasImages: false },
+  results: [],
+  totalResults: 0,
+  page: 1,
+  pageSize: 20,
+  selected: [],
+  questionCache: new Map(),
+  header: {
+    institution: '', title: '', subject: '', teacher: '', className: '', date: '', period: '', duration: '', totalValue: '', instructions: '',
+  },
+  variantsCount: 1,
+  shuffleIncorrect: false,
+  includeAnswerSheet: true,
+  previewTeacher: false,
+  previewVariant: 0,
+  filtersData: { years: [], disciplines: [], languages: [] },
+  database: { sha256: '', questionCount: 0, examCount: 0 },
+  draftSavedAt: null,
+  pendingSharedProof: null,
+};
+
+let draftTimer;
+let previewTimer;
+let draggedId = null;
+let searchRequestId = 0;
+
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+}
+
+function stripEnem(value) {
+  return String(value ?? '')
+    .replace(/\bENEM\b/gi, '')
+    .replace(/\s*-\s*-\s*/g, ' - ')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s*-\s*$/g, '')
+    .trim()
+    .replace(/\s*-\s*$/, '')
+    .replace(/^\s*-\s*/, '');
+}
+
+, 'i')
+    : null;
+  const title = genericTitlePattern?.test(rawTitle)
+    ? ''
+    : formatDisplayTitle(rawTitle);
+
+  if (prefix && title) return `${prefix} — ${title}`;
+  return prefix || title || rawTitle;
+}
+
 function normalizeSnippet(value) {
   return String(value ?? "")
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
@@ -252,7 +330,7 @@ function renderResults() {
       const languageLabel = result.language ? ((state.filtersData.languages.find((l) => String(l.value ?? l) === String(result.language))?.label) || result.language) : '';
       const areaInfo = languageLabel ? `${disciplineLabel} · ${languageLabel}` : disciplineLabel;
       const areaWithImage = result.hasImages ? `${areaInfo} · 🖼️ imagens` : areaInfo;
-      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatDisplayTitle(result.title))} · ${escapeHtml(areaWithImage)}</button></div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
+      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatQuestionHeading(result))} · ${escapeHtml(areaWithImage)}</button></div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
     }).join(''));
   }
   const pages = Math.ceil(state.totalResults / state.pageSize);
@@ -268,7 +346,7 @@ function renderSelected() {
   }
   $('#selected-list').html(state.selected.map((item, index) => {
     const question = state.questionCache.get(item.id);
-    const displayTitle = formatDisplayTitle(question?.title || `Questão ${item.id}`);
+    const displayTitle = formatQuestionHeading(question, `Questão ${item.id}`);
     return `<div class="selected-item card card-body p-2" draggable="true" data-selected-id="${item.id}"><div class="d-flex align-items-center gap-2"><span class="badge text-bg-primary">${index + 1}</span><button class="btn btn-link p-0 text-start text-decoration-none flex-grow-1 selected-preview" data-preview-id="${item.id}">${escapeHtml(displayTitle)}</button><input class="form-control form-control-sm selected-points flex-shrink-0" type="text" inputmode="decimal" autocomplete="off" placeholder="Pontos" pattern="[0-9,]*" value="${escapeHtml(item.points ?? 1)}" data-selected-id="${item.id}" style="width:5.2rem;max-width:6rem;text-align:right;" aria-label="Pontos da questão ${index + 1}"><button class="btn btn-sm btn-outline-secondary move-up" data-selected-id="${item.id}" title="Mover para cima">↑</button><button class="btn btn-sm btn-outline-secondary move-down" data-selected-id="${item.id}" title="Mover para baixo">↓</button><button class="btn btn-sm btn-outline-danger remove-selected" data-selected-id="${item.id}" title="Remover">×</button></div></div>`;
   }).join(''));
 }
@@ -288,7 +366,7 @@ function renderQuestion(question, teacher = true) {
   const provenance = question.sourceTitle && question.sourceTitle !== question.title
     ? `<div class="small text-secondary mt-1">Título da fonte: ${escapeHtml(question.sourceTitle)}</div>`
     : '';
-  return `<div><h3 class="h5">${escapeHtml(question.title)}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${metadata}</div>${provenance}</div>`;
+  return `<div><h3 class="h5">${escapeHtml(formatQuestionHeading(question))}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${metadata}</div>${provenance}</div>`;
 }
 
 async function showPreview(id) {
