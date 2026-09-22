@@ -196,10 +196,225 @@ async function extractItemsCsv(zipPath, csvPath, year) {
   }
 
   const listing = await runProcess('unzip', ['-Z1', zipPath]);
-  const entry = listing.stdout.split(/\r?\n/).find((line) => new RegExp(`ITENS_PROVA_${year}\\.csv$`, 'i').test(line));
+  const entry = listing.stdout.split(/\r?\n/).find((line) => new RegExp(`ITENS_PROVA_${year}\\.csv#!/usr/bin/env node
+
+import { createWriteStream } from 'node:fs';
+import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { dirname, join, resolve } from 'node:path';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+import {
+  AREA_TO_DISCIPLINE,
+  buildDisplayTitle,
+  languageCodeForQuestion,
+  matchQuestionsToItems,
+  parseDelimited,
+  sqlValue,
+} from './inep-enrichment-lib.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const projectRoot = resolve(here, '..', '..');
+const DEFAULT_DATABASE = resolve(projectRoot, 'enem.sqlite');
+const DEFAULT_CACHE_DIR = resolve(projectRoot, '.cache', 'enem-microdados');
+const DEFAULT_OFFSET_RANGE = 200;
+const DEFAULT_MIN_COVERED = 15;
+const DEFAULT_MIN_PRECISION = 0.85;
+
+class EnrichmentError extends Error {
+  constructor(message, options = {}) {
+    super(message, options);
+    this.name = 'EnrichmentError';
+  }
+}
+
+function usage() {
+  return `Uso: node scripts/enrich-inep.mjs [opções]
+
+Opções:
+  --database PATH        SQLite a enriquecer (padrão: ${DEFAULT_DATABASE})
+  --years LISTA          Anos separados por vírgula; sem a opção, usa todos do banco
+  --cache-dir PATH       Cache dos ITENS_PROVA_AAAA.csv (padrão: ${DEFAULT_CACHE_DIR})
+  --offset-range N       Testa deslocamentos -N..N entre índice e CO_POSICAO (padrão: ${DEFAULT_OFFSET_RANGE})
+  --min-covered N        Cobertura mínima para aceitar um caderno (padrão: ${DEFAULT_MIN_COVERED})
+  --min-precision N      Precisão mínima do casamento, entre 0 e 1 (padrão: ${DEFAULT_MIN_PRECISION})
+  --keep-zip             Mantém o ZIP oficial após extrair ITENS_PROVA
+  --dry-run              Faz download/casamento e mostra relatório sem gravar no SQLite
+  --no-titles            Grava só metadados oficiais, sem título pedagógico heurístico
+  --verbose              Exibe detalhes de download e casamento
+  --help                 Exibe esta ajuda
+`;
+}
+
+function parseInteger(value, flag, { min = 0 } = {}) {
+  if (!/^\d+$/.test(String(value ?? ''))) {
+    throw new EnrichmentError(`${flag} deve ser um inteiro.`);
+  }
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < min) {
+    throw new EnrichmentError(`${flag} fora do intervalo permitido.`);
+  }
+  return parsed;
+}
+
+function parseArgs(argv) {
+  const options = {
+    database: DEFAULT_DATABASE,
+    years: null,
+    cacheDir: DEFAULT_CACHE_DIR,
+    offsetRange: DEFAULT_OFFSET_RANGE,
+    minCovered: DEFAULT_MIN_COVERED,
+    minPrecision: DEFAULT_MIN_PRECISION,
+    keepZip: false,
+    dryRun: false,
+    titles: true,
+    verbose: false,
+    help: false,
+  };
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === '--help' || arg === '-h') options.help = true;
+    else if (arg === '--keep-zip') options.keepZip = true;
+    else if (arg === '--dry-run') options.dryRun = true;
+    else if (arg === '--no-titles') options.titles = false;
+    else if (arg === '--verbose') options.verbose = true;
+    else {
+      const [flag, inline] = arg.includes('=') ? arg.split(/=(.*)/s, 2) : [arg, null];
+      const value = inline ?? argv[++index];
+      if (!value) throw new EnrichmentError(`${flag} exige um valor.`);
+      if (flag === '--database') options.database = resolve(process.cwd(), value);
+      else if (flag === '--cache-dir') options.cacheDir = resolve(process.cwd(), value);
+      else if (flag === '--offset-range') options.offsetRange = parseInteger(value, flag);
+      else if (flag === '--min-covered') options.minCovered = parseInteger(value, flag, { min: 1 });
+      else if (flag === '--min-precision') {
+        const precision = Number(value);
+        if (!Number.isFinite(precision) || precision <= 0 || precision > 1) {
+          throw new EnrichmentError('--min-precision deve estar entre 0 e 1.');
+        }
+        options.minPrecision = precision;
+      } else if (flag === '--years') {
+        const years = value.split(',').map((part) => parseInteger(part.trim(), '--years', { min: 1998 }));
+        options.years = [...new Set(years)].sort((a, b) => a - b);
+      } else {
+        throw new EnrichmentError(`Opção desconhecida: ${flag}`);
+      }
+    }
+  }
+
+  return options;
+}
+
+function log(options, ...messages) {
+  if (options.verbose) console.error('[enrich-inep]', ...messages);
+}
+
+function runProcess(command, args, { input, allowFailure = false } = {}) {
+  return new Promise((resolveProcess, rejectProcess) => {
+    const child = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => { stdout += chunk; });
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('error', (error) => {
+      rejectProcess(new EnrichmentError(`Não foi possível executar ${command}: ${error.message}`, { cause: error }));
+    });
+    child.on('close', (code) => {
+      if (code !== 0 && !allowFailure) {
+        rejectProcess(new EnrichmentError(`${command} terminou com código ${code}: ${stderr.trim()}`));
+      } else {
+        resolveProcess({ code, stdout, stderr });
+      }
+    });
+    child.stdin.end(input ?? '');
+  });
+}
+
+async function runSqlite(databasePath, sql, { json = false } = {}) {
+  const args = ['-batch'];
+  if (json) args.push('-json');
+  args.push(databasePath, sql);
+  const result = await runProcess('sqlite3', args);
+  if (!json) return result.stdout;
+  const body = result.stdout.trim();
+  if (!body) return [];
+  try {
+    return JSON.parse(body);
+  } catch (error) {
+    throw new EnrichmentError(`sqlite3 não retornou JSON válido: ${error.message}`, { cause: error });
+  }
+}
+
+async function fileExists(path) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function downloadFile(url, destination, options) {
+  await mkdir(dirname(destination), { recursive: true });
+  const temporary = `${destination}.part`;
+  log(options, `Baixando ${url}`);
+  const response = await fetch(url, {
+    headers: { 'user-agent': 'enem-criador-inep-enrichment/1.0' },
+  });
+  if (!response.ok || !response.body) {
+    throw new EnrichmentError(`HTTP ${response.status} ao baixar ${url}`);
+  }
+  await pipeline(Readable.fromWeb(response.body), createWriteStream(temporary));
+  await rename(temporary, destination);
+}
+
+function psQuote(value) {
+  return `'${String(value).replaceAll("'", "''")}'`;
+}
+
+async function extractItemsCsv(zipPath, csvPath, year) {
+  await mkdir(dirname(csvPath), { recursive: true });
+  if (process.platform === 'win32') {
+    const script = [
+      'Add-Type -AssemblyName System.IO.Compression.FileSystem',
+      `$zip=[System.IO.Compression.ZipFile]::OpenRead(${psQuote(zipPath)})`,
+      `$entry=$zip.Entries | Where-Object { $_.FullName -match 'ITENS_PROVA_${year}\\.csv$' } | Select-Object -First 1`,
+      'if ($null -eq $entry) { $zip.Dispose(); exit 42 }',
+      `[System.IO.Compression.ZipFileExtensions]::ExtractToFile($entry, ${psQuote(csvPath)}, $true)`,
+      '$zip.Dispose()',
+    ].join('; ');
+    const result = await runProcess('powershell.exe', ['-NoProfile', '-Command', script], { allowFailure: true });
+    if (result.code === 42) throw new EnrichmentError(`ITENS_PROVA_${year}.csv não encontrado no ZIP oficial.`);
+    if (result.code !== 0) throw new EnrichmentError(`Falha ao extrair ITENS_PROVA_${year}.csv: ${result.stderr.trim()}`);
+    return;
+  }
+
+, 'i').test(line));
   if (!entry) throw new EnrichmentError(`ITENS_PROVA_${year}.csv não encontrado no ZIP oficial.`);
-  const extracted = await runProcess('unzip', ['-p', zipPath, entry]);
-  await writeFile(csvPath, extracted.stdout, 'latin1');
+
+  await new Promise((resolveExtract, rejectExtract) => {
+    const child = spawn('unzip', ['-p', zipPath, entry], { stdio: ['ignore', 'pipe', 'pipe'] });
+    const output = createWriteStream(csvPath);
+    let stderr = '';
+    child.stderr.setEncoding('utf8');
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.on('error', (error) => rejectExtract(
+      new EnrichmentError(`Não foi possível executar unzip: ${error.message}`, { cause: error }),
+    ));
+    output.on('error', rejectExtract);
+    child.stdout.pipe(output);
+    child.on('close', (code) => {
+      if (code !== 0) {
+        rejectExtract(new EnrichmentError(`unzip terminou com código ${code}: ${stderr.trim()}`));
+      } else {
+        output.on('close', resolveExtract);
+      }
+    });
+  });
 }
 
 async function loadOfficialItems(year, options) {
