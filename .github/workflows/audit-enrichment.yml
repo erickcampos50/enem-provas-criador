@@ -67,4 +67,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/inep/audit/latest.json data/inep/audit/latest.md
           git commit -m "data: audit INEP enrichment across ENEM years"
+          git pull --rebase origin main
           git push
