@@ -1,0 +1,2346 @@
+{
+  "generatedAt": "2026-09-22T03:31:33.663Z",
+  "dryRun": true,
+  "thresholds": {
+    "minPrecision": 0.85,
+    "safeMinCoverage": 0.93,
+    "minCovered": 15,
+    "offsetRange": 200
+  },
+  "summary": {
+    "years": 15,
+    "safeYears": [
+      2009,
+      2010,
+      2011,
+      2012,
+      2013,
+      2014,
+      2015,
+      2016,
+      2017,
+      2018,
+      2019,
+      2020,
+      2022,
+      2023
+    ],
+    "reviewYears": [
+      2021
+    ],
+    "emptyYears": [],
+    "totalQuestions": 2757,
+    "mappedQuestions": 2598
+  },
+  "years": [
+    {
+      "year": 2009,
+      "total": 179,
+      "mapped": 178,
+      "unresolved": 1,
+      "unresolvedQuestions": [
+        {
+          "id": 24,
+          "number": 120,
+          "language": null,
+          "title": "Questão 120 - ENEM 2009"
+        }
+      ],
+      "mismatchedDisciplines": 14,
+      "minMatchPrecision": 0.9772727272727273,
+      "averageMatchPrecision": 0.9945097037793649,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60181,
+          "skill": null,
+          "title": "Ciências Humanas",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60182,
+          "skill": null,
+          "title": "Ciências Humanas",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60183,
+          "skill": null,
+          "title": "Ciências Humanas: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60184,
+          "skill": null,
+          "title": "Ciências Humanas",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60185,
+          "skill": null,
+          "title": "Ciências Humanas",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60186,
+          "skill": null,
+          "title": "Ciências Humanas: movimentos sociais",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60187,
+          "skill": null,
+          "title": "Ciências Humanas",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 60188,
+          "skill": null,
+          "title": "Ciências Humanas: movimentos sociais",
+          "score": 1
+        }
+      ],
+      "coverage": 0.994413407821229,
+      "status": "safe"
+    },
+    {
+      "year": 2010,
+      "total": 185,
+      "mapped": 173,
+      "unresolved": 12,
+      "unresolvedQuestions": [
+        {
+          "id": 195,
+          "number": 112,
+          "language": null,
+          "title": "Questão 112 - ENEM 2010"
+        },
+        {
+          "id": 224,
+          "number": 139,
+          "language": null,
+          "title": "Questão 139 - ENEM 2010"
+        },
+        {
+          "id": 351,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2010"
+        },
+        {
+          "id": 353,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2010"
+        },
+        {
+          "id": 355,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2010"
+        },
+        {
+          "id": 357,
+          "number": 94,
+          "language": "espanhol",
+          "title": "Questão 94 - ENEM 2010"
+        },
+        {
+          "id": 359,
+          "number": 95,
+          "language": "espanhol",
+          "title": "Questão 95 - ENEM 2010"
+        },
+        {
+          "id": 352,
+          "number": 91,
+          "language": "ingles",
+          "title": "Questão 91 - ENEM 2010"
+        },
+        {
+          "id": 354,
+          "number": 92,
+          "language": "ingles",
+          "title": "Questão 92 - ENEM 2010"
+        },
+        {
+          "id": 356,
+          "number": 93,
+          "language": "ingles",
+          "title": "Questão 93 - ENEM 2010"
+        },
+        {
+          "id": 358,
+          "number": 94,
+          "language": "ingles",
+          "title": "Questão 94 - ENEM 2010"
+        },
+        {
+          "id": 360,
+          "number": 95,
+          "language": "ingles",
+          "title": "Questão 95 - ENEM 2010"
+        }
+      ],
+      "mismatchedDisciplines": 33,
+      "minMatchPrecision": 0.975,
+      "averageMatchPrecision": 0.9887122671804736,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 71933,
+          "skill": 6,
+          "title": "Representações gráficas e cartográficas do espaço",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 71990,
+          "skill": 19,
+          "title": "Tecnologia e apropriação dos espaços rural e urbano: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73431,
+          "skill": 17,
+          "title": "Tecnologia e territorialização da produção: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 58249,
+          "skill": 26,
+          "title": "Ocupação dos meios físicos e paisagem: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73854,
+          "skill": 27,
+          "title": "Sociedade e meio físico",
+          "score": 1
+        },
+        {
+          "number": 6,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73858,
+          "skill": 26,
+          "title": "Ocupação dos meios físicos e paisagem: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 7,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 71987,
+          "skill": 16,
+          "title": "Técnicas, tecnologias, trabalho e vida social",
+          "score": 1
+        },
+        {
+          "number": 8,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73852,
+          "skill": 30,
+          "title": "Preservação e degradação da vida no planeta",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9351351351351351,
+      "status": "safe"
+    },
+    {
+      "year": 2011,
+      "total": 184,
+      "mapped": 174,
+      "unresolved": 10,
+      "unresolvedQuestions": [
+        {
+          "id": 525,
+          "number": 81,
+          "language": null,
+          "title": "Questão 81 - ENEM 2011"
+        },
+        {
+          "id": 536,
+          "number": 91,
+          "language": null,
+          "title": "Questão 91 - ENEM 2011"
+        },
+        {
+          "id": 538,
+          "number": 92,
+          "language": null,
+          "title": "Questão 92 - ENEM 2011"
+        },
+        {
+          "id": 540,
+          "number": 93,
+          "language": null,
+          "title": "Questão 93 - ENEM 2011"
+        },
+        {
+          "id": 542,
+          "number": 94,
+          "language": null,
+          "title": "Questão 94 - ENEM 2011"
+        },
+        {
+          "id": 544,
+          "number": 95,
+          "language": null,
+          "title": "Questão 95 - ENEM 2011"
+        },
+        {
+          "id": 537,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2011"
+        },
+        {
+          "id": 539,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2011"
+        },
+        {
+          "id": 541,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2011"
+        },
+        {
+          "id": 543,
+          "number": 94,
+          "language": "espanhol",
+          "title": "Questão 94 - ENEM 2011"
+        }
+      ],
+      "mismatchedDisciplines": 8,
+      "minMatchPrecision": 0.9777777777777777,
+      "averageMatchPrecision": 0.9943805874840353,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 75504,
+          "skill": 21,
+          "title": "Meios de comunicação e vida social: democracia e participação política",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73764,
+          "skill": 23,
+          "title": "Valores éticos e estruturação política",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 71745,
+          "skill": 13,
+          "title": "Movimentos sociais e disputas de poder",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 75632,
+          "skill": 30,
+          "title": "Preservação e degradação da vida no planeta",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73690,
+          "skill": 18,
+          "title": "Produção, circulação de riquezas e espaço: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 6,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 73785,
+          "skill": 6,
+          "title": "Representações gráficas e cartográficas do espaço",
+          "score": 1
+        },
+        {
+          "number": 7,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 75451,
+          "skill": 17,
+          "title": "Tecnologia e territorialização da produção",
+          "score": 1
+        },
+        {
+          "number": 8,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 71139,
+          "skill": 26,
+          "title": "Ocupação dos meios físicos e paisagem",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9456521739130435,
+      "status": "safe"
+    },
+    {
+      "year": 2012,
+      "total": 185,
+      "mapped": 174,
+      "unresolved": 11,
+      "unresolvedQuestions": [
+        {
+          "id": 726,
+          "number": 94,
+          "language": null,
+          "title": "Questão 94 - ENEM 2012"
+        },
+        {
+          "id": 622,
+          "number": 165,
+          "language": null,
+          "title": "Questão 165 - ENEM 2012"
+        },
+        {
+          "id": 720,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2012"
+        },
+        {
+          "id": 722,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2012"
+        },
+        {
+          "id": 724,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2012"
+        },
+        {
+          "id": 728,
+          "number": 95,
+          "language": "espanhol",
+          "title": "Questão 95 - ENEM 2012"
+        },
+        {
+          "id": 721,
+          "number": 91,
+          "language": "ingles",
+          "title": "Questão 91 - ENEM 2012"
+        },
+        {
+          "id": 723,
+          "number": 92,
+          "language": "ingles",
+          "title": "Questão 92 - ENEM 2012"
+        },
+        {
+          "id": 725,
+          "number": 93,
+          "language": "ingles",
+          "title": "Questão 93 - ENEM 2012"
+        },
+        {
+          "id": 727,
+          "number": 94,
+          "language": "ingles",
+          "title": "Questão 94 - ENEM 2012"
+        },
+        {
+          "id": 729,
+          "number": 95,
+          "language": "ingles",
+          "title": "Questão 95 - ENEM 2012"
+        }
+      ],
+      "mismatchedDisciplines": 4,
+      "minMatchPrecision": 0.9777777777777777,
+      "averageMatchPrecision": 0.9943805874840353,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 7952,
+          "skill": 1,
+          "title": "Fontes históricas e geográficas sobre a cultura",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 9690,
+          "skill": 23,
+          "title": "Valores éticos e estruturação política",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 11047,
+          "skill": 24,
+          "title": "Cidadania e democracia: cidadania e direitos",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 8102,
+          "skill": 3,
+          "title": "Manifestações culturais e processos históricos",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 9689,
+          "skill": 3,
+          "title": "Manifestações culturais e processos históricos: escravidão e relações sociais",
+          "score": 1
+        },
+        {
+          "number": 6,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 8011,
+          "skill": 13,
+          "title": "Movimentos sociais e disputas de poder: movimentos sociais",
+          "score": 1
+        },
+        {
+          "number": 7,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 14121,
+          "skill": 24,
+          "title": "Cidadania e democracia: democracia e participação política",
+          "score": 1
+        },
+        {
+          "number": 8,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 7795,
+          "skill": 22,
+          "title": "Lutas sociais, legislação e políticas públicas",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9405405405405406,
+      "status": "safe"
+    },
+    {
+      "year": 2013,
+      "total": 185,
+      "mapped": 175,
+      "unresolved": 10,
+      "unresolvedQuestions": [
+        {
+          "id": 905,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2013"
+        },
+        {
+          "id": 907,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2013"
+        },
+        {
+          "id": 909,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2013"
+        },
+        {
+          "id": 911,
+          "number": 94,
+          "language": "espanhol",
+          "title": "Questão 94 - ENEM 2013"
+        },
+        {
+          "id": 913,
+          "number": 95,
+          "language": "espanhol",
+          "title": "Questão 95 - ENEM 2013"
+        },
+        {
+          "id": 906,
+          "number": 91,
+          "language": "ingles",
+          "title": "Questão 91 - ENEM 2013"
+        },
+        {
+          "id": 908,
+          "number": 92,
+          "language": "ingles",
+          "title": "Questão 92 - ENEM 2013"
+        },
+        {
+          "id": 910,
+          "number": 93,
+          "language": "ingles",
+          "title": "Questão 93 - ENEM 2013"
+        },
+        {
+          "id": 912,
+          "number": 94,
+          "language": "ingles",
+          "title": "Questão 94 - ENEM 2013"
+        },
+        {
+          "id": 914,
+          "number": 95,
+          "language": "ingles",
+          "title": "Questão 95 - ENEM 2013"
+        }
+      ],
+      "mismatchedDisciplines": 9,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 25217,
+          "skill": 6,
+          "title": "Representações gráficas e cartográficas do espaço: cartografia e representação espacial",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 37116,
+          "skill": 27,
+          "title": "Sociedade e meio físico: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 44796,
+          "skill": 5,
+          "title": "Patrimônio cultural e diversidade: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 49317,
+          "skill": 4,
+          "title": "Comparação de pontos de vista sobre cultura",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 23068,
+          "skill": 11,
+          "title": "Práticas de grupos sociais no tempo e no espaço",
+          "score": 1
+        },
+        {
+          "number": 6,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 39902,
+          "skill": 15,
+          "title": "Conflitos culturais, sociais, políticos e ambientais",
+          "score": 1
+        },
+        {
+          "number": 7,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 45258,
+          "skill": 6,
+          "title": "Representações gráficas e cartográficas do espaço",
+          "score": 1
+        },
+        {
+          "number": 8,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 51393,
+          "skill": 13,
+          "title": "Movimentos sociais e disputas de poder",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9459459459459459,
+      "status": "safe"
+    },
+    {
+      "year": 2014,
+      "total": 185,
+      "mapped": 175,
+      "unresolved": 10,
+      "unresolvedQuestions": [
+        {
+          "id": 1090,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2014"
+        },
+        {
+          "id": 1092,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2014"
+        },
+        {
+          "id": 1094,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2014"
+        },
+        {
+          "id": 1096,
+          "number": 94,
+          "language": "espanhol",
+          "title": "Questão 94 - ENEM 2014"
+        },
+        {
+          "id": 1098,
+          "number": 95,
+          "language": "espanhol",
+          "title": "Questão 95 - ENEM 2014"
+        },
+        {
+          "id": 1091,
+          "number": 91,
+          "language": "ingles",
+          "title": "Questão 91 - ENEM 2014"
+        },
+        {
+          "id": 1093,
+          "number": 92,
+          "language": "ingles",
+          "title": "Questão 92 - ENEM 2014"
+        },
+        {
+          "id": 1095,
+          "number": 93,
+          "language": "ingles",
+          "title": "Questão 93 - ENEM 2014"
+        },
+        {
+          "id": 1097,
+          "number": 94,
+          "language": "ingles",
+          "title": "Questão 94 - ENEM 2014"
+        },
+        {
+          "id": 1099,
+          "number": 95,
+          "language": "ingles",
+          "title": "Questão 95 - ENEM 2014"
+        }
+      ],
+      "mismatchedDisciplines": 5,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 67718,
+          "skill": 16,
+          "title": "Técnicas, tecnologias, trabalho e vida social",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 24323,
+          "skill": 5,
+          "title": "Patrimônio cultural e diversidade",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 59956,
+          "skill": 29,
+          "title": "Recursos naturais e produção do espaço geográfico",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 49310,
+          "skill": 4,
+          "title": "Comparação de pontos de vista sobre cultura",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 46855,
+          "skill": 20,
+          "title": "Tecnologia, vida social e mundo do trabalho",
+          "score": 1
+        },
+        {
+          "number": 6,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 67994,
+          "skill": 8,
+          "title": "Estados, fluxos populacionais e questões sociais",
+          "score": 1
+        },
+        {
+          "number": 7,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 25276,
+          "skill": 18,
+          "title": "Produção, circulação de riquezas e espaço",
+          "score": 1
+        },
+        {
+          "number": 8,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 59833,
+          "skill": 3,
+          "title": "Manifestações culturais e processos históricos",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9459459459459459,
+      "status": "safe"
+    },
+    {
+      "year": 2015,
+      "total": 184,
+      "mapped": 174,
+      "unresolved": 10,
+      "unresolvedQuestions": [
+        {
+          "id": 1282,
+          "number": 95,
+          "language": null,
+          "title": "Questão 95 - ENEM 2015"
+        },
+        {
+          "id": 1274,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2015"
+        },
+        {
+          "id": 1276,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2015"
+        },
+        {
+          "id": 1278,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2015"
+        },
+        {
+          "id": 1280,
+          "number": 94,
+          "language": "espanhol",
+          "title": "Questão 94 - ENEM 2015"
+        },
+        {
+          "id": 1283,
+          "number": 95,
+          "language": "espanhol",
+          "title": "Questão 95 - ENEM 2015"
+        },
+        {
+          "id": 1275,
+          "number": 91,
+          "language": "ingles",
+          "title": "Questão 91 - ENEM 2015"
+        },
+        {
+          "id": 1277,
+          "number": 92,
+          "language": "ingles",
+          "title": "Questão 92 - ENEM 2015"
+        },
+        {
+          "id": 1279,
+          "number": 93,
+          "language": "ingles",
+          "title": "Questão 93 - ENEM 2015"
+        },
+        {
+          "id": 1281,
+          "number": 94,
+          "language": "ingles",
+          "title": "Questão 94 - ENEM 2015"
+        }
+      ],
+      "mismatchedDisciplines": 7,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 83631,
+          "skill": 14,
+          "title": "Herança e expressão gênica",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 39964,
+          "skill": 12,
+          "title": "Impactos ambientais de atividades produtivas",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 17715,
+          "skill": 15,
+          "title": "Transmissão de doenças, higiene e saneamento: energia nuclear",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 55314,
+          "skill": 23,
+          "title": "Geração, uso e transformação de energia",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 77480,
+          "skill": 7,
+          "title": "Testes e propriedades físico-químicas de materiais",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 26581,
+          "skill": 27,
+          "title": "Intervenção ambiental com conhecimentos químicos",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 15919,
+          "skill": 18,
+          "title": "Propriedades e finalidades de produtos e tecnologias",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 82658,
+          "skill": 1,
+          "title": "Fenômenos ondulatórios e oscilatórios: ondas e fenômenos ondulatórios",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9456521739130435,
+      "status": "safe"
+    },
+    {
+      "year": 2016,
+      "total": 185,
+      "mapped": 175,
+      "unresolved": 10,
+      "unresolvedQuestions": [
+        {
+          "id": 1463,
+          "number": 93,
+          "language": null,
+          "title": "Questão 93 - ENEM 2016"
+        },
+        {
+          "id": 1459,
+          "number": 91,
+          "language": "espanhol",
+          "title": "Questão 91 - ENEM 2016"
+        },
+        {
+          "id": 1461,
+          "number": 92,
+          "language": "espanhol",
+          "title": "Questão 92 - ENEM 2016"
+        },
+        {
+          "id": 1464,
+          "number": 93,
+          "language": "espanhol",
+          "title": "Questão 93 - ENEM 2016"
+        },
+        {
+          "id": 1465,
+          "number": 94,
+          "language": "espanhol",
+          "title": "Questão 94 - ENEM 2016"
+        },
+        {
+          "id": 1467,
+          "number": 95,
+          "language": "espanhol",
+          "title": "Questão 95 - ENEM 2016"
+        },
+        {
+          "id": 1460,
+          "number": 91,
+          "language": "ingles",
+          "title": "Questão 91 - ENEM 2016"
+        },
+        {
+          "id": 1462,
+          "number": 92,
+          "language": "ingles",
+          "title": "Questão 92 - ENEM 2016"
+        },
+        {
+          "id": 1466,
+          "number": 94,
+          "language": "ingles",
+          "title": "Questão 94 - ENEM 2016"
+        },
+        {
+          "id": 1468,
+          "number": 95,
+          "language": "ingles",
+          "title": "Questão 95 - ENEM 2016"
+        }
+      ],
+      "mismatchedDisciplines": 2,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        -45,
+        0,
+        90
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 96431,
+          "skill": 23,
+          "title": "Valores éticos e estruturação política",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 86985,
+          "skill": 22,
+          "title": "Lutas sociais, legislação e políticas públicas: democracia e participação política",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 96455,
+          "skill": 26,
+          "title": "Ocupação dos meios físicos e paisagem: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 88207,
+          "skill": 19,
+          "title": "Tecnologia e apropriação dos espaços rural e urbano: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 29404,
+          "skill": 2,
+          "title": "Memória e sociedades humanas",
+          "score": 1
+        },
+        {
+          "number": 6,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 83823,
+          "skill": 4,
+          "title": "Comparação de pontos de vista sobre cultura",
+          "score": 1
+        },
+        {
+          "number": 7,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 97414,
+          "skill": 4,
+          "title": "Comparação de pontos de vista sobre cultura",
+          "score": 1
+        },
+        {
+          "number": 8,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 27437,
+          "skill": 11,
+          "title": "Práticas de grupos sociais no tempo e no espaço: urbanização e espaço urbano",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9459459459459459,
+      "status": "safe"
+    },
+    {
+      "year": 2017,
+      "total": 185,
+      "mapped": 175,
+      "unresolved": 10,
+      "unresolvedQuestions": [
+        {
+          "id": 1473,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2017"
+        },
+        {
+          "id": 1566,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2017"
+        },
+        {
+          "id": 1578,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2017"
+        },
+        {
+          "id": 1590,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2017"
+        },
+        {
+          "id": 1602,
+          "number": 5,
+          "language": "espanhol",
+          "title": "Questão 5 - ENEM 2017"
+        },
+        {
+          "id": 1474,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2017"
+        },
+        {
+          "id": 1567,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2017"
+        },
+        {
+          "id": 1579,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2017"
+        },
+        {
+          "id": 1591,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2017"
+        },
+        {
+          "id": 1603,
+          "number": 5,
+          "language": "ingles",
+          "title": "Questão 5 - ENEM 2017"
+        }
+      ],
+      "mismatchedDisciplines": 11,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        -5,
+        45,
+        90,
+        135
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 44604,
+          "skill": 5,
+          "title": "Patrimônio cultural e diversidade: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 38250,
+          "skill": 9,
+          "title": "Organizações políticas e socioeconômicas",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 43284,
+          "skill": 23,
+          "title": "Valores éticos e estruturação política",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 81598,
+          "skill": 3,
+          "title": "Manifestações culturais e processos históricos",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 8172,
+          "skill": 13,
+          "title": "Movimentos sociais e disputas de poder",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 49683,
+          "skill": 2,
+          "title": "Memória e sociedades humanas",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 82228,
+          "skill": 19,
+          "title": "Tecnologia e apropriação dos espaços rural e urbano: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 45306,
+          "skill": 7,
+          "title": "Relações de poder entre nações",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9459459459459459,
+      "status": "safe"
+    },
+    {
+      "year": 2018,
+      "total": 184,
+      "mapped": 172,
+      "unresolved": 12,
+      "unresolvedQuestions": [
+        {
+          "id": 1658,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2018"
+        },
+        {
+          "id": 1751,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2018"
+        },
+        {
+          "id": 1763,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2018"
+        },
+        {
+          "id": 1775,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2018"
+        },
+        {
+          "id": 1787,
+          "number": 5,
+          "language": "espanhol",
+          "title": "Questão 5 - ENEM 2018"
+        },
+        {
+          "id": 1659,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2018"
+        },
+        {
+          "id": 1752,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2018"
+        },
+        {
+          "id": 1764,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2018"
+        },
+        {
+          "id": 1776,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2018"
+        },
+        {
+          "id": 1788,
+          "number": 5,
+          "language": "ingles",
+          "title": "Questão 5 - ENEM 2018"
+        },
+        {
+          "id": 1715,
+          "number": 15,
+          "language": null,
+          "title": "Questão 15 - ENEM 2018"
+        },
+        {
+          "id": 1730,
+          "number": 163,
+          "language": null,
+          "title": "Questão 163 - ENEM 2018"
+        }
+      ],
+      "mismatchedDisciplines": 8,
+      "minMatchPrecision": 0.975,
+      "averageMatchPrecision": 0.994331395348836,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 91,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 111456,
+          "skill": 2,
+          "title": "Desenvolvimento científico e tecnológico",
+          "score": 1
+        },
+        {
+          "number": 92,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 87205,
+          "skill": 23,
+          "title": "Geração, uso e transformação de energia",
+          "score": 1
+        },
+        {
+          "number": 93,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 39342,
+          "skill": 21,
+          "title": "Leis físicas e químicas em processos cotidianos",
+          "score": 1
+        },
+        {
+          "number": 94,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 111635,
+          "skill": 14,
+          "title": "Herança e expressão gênica",
+          "score": 1
+        },
+        {
+          "number": 95,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 111630,
+          "skill": 19,
+          "title": "Métodos científicos para diagnosticar e resolver problemas",
+          "score": 1
+        },
+        {
+          "number": 96,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 61264,
+          "skill": 14,
+          "title": "Herança e expressão gênica",
+          "score": 1
+        },
+        {
+          "number": 97,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 11526,
+          "skill": 21,
+          "title": "Leis físicas e químicas em processos cotidianos",
+          "score": 1
+        },
+        {
+          "number": 98,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 111506,
+          "skill": 4,
+          "title": "Conservação ambiental e biodiversidade: ecologia e relações entre organismos",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9347826086956522,
+      "status": "safe"
+    },
+    {
+      "year": 2019,
+      "total": 181,
+      "mapped": 172,
+      "unresolved": 9,
+      "unresolvedQuestions": [
+        {
+          "id": 1842,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2019"
+        },
+        {
+          "id": 1933,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2019"
+        },
+        {
+          "id": 1945,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2019"
+        },
+        {
+          "id": 1957,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2019"
+        },
+        {
+          "id": 1969,
+          "number": 5,
+          "language": "espanhol",
+          "title": "Questão 5 - ENEM 2019"
+        },
+        {
+          "id": 1843,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2019"
+        },
+        {
+          "id": 1934,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2019"
+        },
+        {
+          "id": 1946,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2019"
+        },
+        {
+          "id": 1958,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2019"
+        }
+      ],
+      "mismatchedDisciplines": 6,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 111894,
+          "skill": 27,
+          "title": "Sociedade e meio físico",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 118054,
+          "skill": 28,
+          "title": "Tecnologia e impactos socioambientais",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 118067,
+          "skill": 29,
+          "title": "Recursos naturais e produção do espaço geográfico: território e relações de poder",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 66498,
+          "skill": 30,
+          "title": "Preservação e degradação da vida no planeta: agricultura e espaço agrário",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 86751,
+          "skill": 23,
+          "title": "Valores éticos e estruturação política",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 83820,
+          "skill": 12,
+          "title": "Justiça e organização das sociedades",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 77940,
+          "skill": 16,
+          "title": "Técnicas, tecnologias, trabalho e vida social: escravidão e relações sociais",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 118034,
+          "skill": 9,
+          "title": "Organizações políticas e socioeconômicas",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9502762430939227,
+      "status": "safe"
+    },
+    {
+      "year": 2020,
+      "total": 182,
+      "mapped": 170,
+      "unresolved": 12,
+      "unresolvedQuestions": [
+        {
+          "id": 2023,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2020"
+        },
+        {
+          "id": 2113,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2020"
+        },
+        {
+          "id": 2125,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2020"
+        },
+        {
+          "id": 2137,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2020"
+        },
+        {
+          "id": 2024,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2020"
+        },
+        {
+          "id": 2114,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2020"
+        },
+        {
+          "id": 2126,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2020"
+        },
+        {
+          "id": 2138,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2020"
+        },
+        {
+          "id": 2150,
+          "number": 5,
+          "language": "ingles",
+          "title": "Questão 5 - ENEM 2020"
+        },
+        {
+          "id": 2149,
+          "number": 5,
+          "language": null,
+          "title": "Questão 5 - ENEM 2020"
+        },
+        {
+          "id": 2064,
+          "number": 135,
+          "language": null,
+          "title": "Questão 135 - ENEM 2020"
+        },
+        {
+          "id": 2087,
+          "number": 157,
+          "language": null,
+          "title": "Questão 157 - ENEM 2020"
+        }
+      ],
+      "mismatchedDisciplines": 5,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 112017,
+          "skill": 8,
+          "title": "Estados, fluxos populacionais e questões sociais: território e relações de poder",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 111987,
+          "skill": 17,
+          "title": "Tecnologia e territorialização da produção",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 111788,
+          "skill": 16,
+          "title": "Técnicas, tecnologias, trabalho e vida social: industrialização e mundo do trabalho",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 43978,
+          "skill": 13,
+          "title": "Movimentos sociais e disputas de poder",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 84333,
+          "skill": 19,
+          "title": "Tecnologia e apropriação dos espaços rural e urbano: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 111924,
+          "skill": 6,
+          "title": "Representações gráficas e cartográficas do espaço",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 89808,
+          "skill": 15,
+          "title": "Conflitos culturais, sociais, políticos e ambientais",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 112106,
+          "skill": 27,
+          "title": "Sociedade e meio físico",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9340659340659341,
+      "status": "safe"
+    },
+    {
+      "year": 2021,
+      "total": 185,
+      "mapped": 167,
+      "unresolved": 18,
+      "unresolvedQuestions": [
+        {
+          "id": 2205,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2021"
+        },
+        {
+          "id": 2298,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2021"
+        },
+        {
+          "id": 2310,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2021"
+        },
+        {
+          "id": 2322,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2021"
+        },
+        {
+          "id": 2334,
+          "number": 5,
+          "language": "espanhol",
+          "title": "Questão 5 - ENEM 2021"
+        },
+        {
+          "id": 2206,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2021"
+        },
+        {
+          "id": 2299,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2021"
+        },
+        {
+          "id": 2311,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2021"
+        },
+        {
+          "id": 2323,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2021"
+        },
+        {
+          "id": 2335,
+          "number": 5,
+          "language": "ingles",
+          "title": "Questão 5 - ENEM 2021"
+        },
+        {
+          "id": 2262,
+          "number": 15,
+          "language": null,
+          "title": "Questão 15 - ENEM 2021"
+        },
+        {
+          "id": 2305,
+          "number": 25,
+          "language": null,
+          "title": "Questão 25 - ENEM 2021"
+        },
+        {
+          "id": 2320,
+          "number": 38,
+          "language": null,
+          "title": "Questão 38 - ENEM 2021"
+        },
+        {
+          "id": 2339,
+          "number": 53,
+          "language": null,
+          "title": "Questão 53 - ENEM 2021"
+        },
+        {
+          "id": 2249,
+          "number": 138,
+          "language": null,
+          "title": "Questão 138 - ENEM 2021"
+        },
+        {
+          "id": 2250,
+          "number": 139,
+          "language": null,
+          "title": "Questão 139 - ENEM 2021"
+        },
+        {
+          "id": 2257,
+          "number": 145,
+          "language": null,
+          "title": "Questão 145 - ENEM 2021"
+        },
+        {
+          "id": 2265,
+          "number": 152,
+          "language": null,
+          "title": "Questão 152 - ENEM 2021"
+        }
+      ],
+      "mismatchedDisciplines": 10,
+      "minMatchPrecision": 0.925,
+      "averageMatchPrecision": 0.9607890280045995,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 91,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 117867,
+          "skill": 12,
+          "title": "Impactos ambientais de atividades produtivas: ácidos, bases e pH",
+          "score": 1
+        },
+        {
+          "number": 92,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 63095,
+          "skill": 1,
+          "title": "Fenômenos ondulatórios e oscilatórios: ondas e fenômenos ondulatórios",
+          "score": 1
+        },
+        {
+          "number": 93,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 68355,
+          "skill": 28,
+          "title": "Adaptações dos organismos ao ambiente",
+          "score": 1
+        },
+        {
+          "number": 94,
+          "sourceDiscipline": "matematica",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 85781,
+          "skill": 20,
+          "title": "Movimentos de partículas, objetos e corpos",
+          "score": 1
+        },
+        {
+          "number": 95,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 117843,
+          "skill": 27,
+          "title": "Intervenção ambiental com conhecimentos químicos",
+          "score": 1
+        },
+        {
+          "number": 96,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 63600,
+          "skill": 15,
+          "title": "Transmissão de doenças, higiene e saneamento: vacinas de RNAm",
+          "score": 1
+        },
+        {
+          "number": 97,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 12401,
+          "skill": 19,
+          "title": "Métodos científicos para diagnosticar e resolver problemas",
+          "score": 1
+        },
+        {
+          "number": 98,
+          "sourceDiscipline": "ciencias-natureza",
+          "officialDiscipline": "ciencias-natureza",
+          "itemCode": 111498,
+          "skill": 14,
+          "title": "Herança e expressão gênica",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9027027027027027,
+      "status": "review"
+    },
+    {
+      "year": 2022,
+      "total": 185,
+      "mapped": 173,
+      "unresolved": 12,
+      "unresolvedQuestions": [
+        {
+          "id": 2390,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2022"
+        },
+        {
+          "id": 2483,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2022"
+        },
+        {
+          "id": 2495,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2022"
+        },
+        {
+          "id": 2507,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2022"
+        },
+        {
+          "id": 2519,
+          "number": 5,
+          "language": "espanhol",
+          "title": "Questão 5 - ENEM 2022"
+        },
+        {
+          "id": 2391,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2022"
+        },
+        {
+          "id": 2484,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2022"
+        },
+        {
+          "id": 2496,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2022"
+        },
+        {
+          "id": 2508,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2022"
+        },
+        {
+          "id": 2520,
+          "number": 5,
+          "language": "ingles",
+          "title": "Questão 5 - ENEM 2022"
+        },
+        {
+          "id": 2440,
+          "number": 143,
+          "language": null,
+          "title": "Questão 143 - ENEM 2022"
+        },
+        {
+          "id": 2455,
+          "number": 157,
+          "language": null,
+          "title": "Questão 157 - ENEM 2022"
+        }
+      ],
+      "mismatchedDisciplines": 5,
+      "minMatchPrecision": 0.9772727272727273,
+      "averageMatchPrecision": 0.9943510246978468,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140506,
+          "skill": 26,
+          "title": "Ocupação dos meios físicos e paisagem",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 83806,
+          "skill": 24,
+          "title": "Cidadania e democracia",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 141322,
+          "skill": 24,
+          "title": "Cidadania e democracia: escravidão e relações sociais",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140639,
+          "skill": 30,
+          "title": "Preservação e degradação da vida no planeta",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140682,
+          "skill": 27,
+          "title": "Sociedade e meio físico",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 87207,
+          "skill": 17,
+          "title": "Tecnologia e territorialização da produção: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 88045,
+          "skill": 18,
+          "title": "Produção, circulação de riquezas e espaço: urbanização e espaço urbano",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140568,
+          "skill": 21,
+          "title": "Meios de comunicação e vida social",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9351351351351351,
+      "status": "safe"
+    },
+    {
+      "year": 2023,
+      "total": 183,
+      "mapped": 171,
+      "unresolved": 12,
+      "unresolvedQuestions": [
+        {
+          "id": 2575,
+          "number": 1,
+          "language": "espanhol",
+          "title": "Questão 1 - ENEM 2023"
+        },
+        {
+          "id": 2667,
+          "number": 2,
+          "language": "espanhol",
+          "title": "Questão 2 - ENEM 2023"
+        },
+        {
+          "id": 2679,
+          "number": 3,
+          "language": "espanhol",
+          "title": "Questão 3 - ENEM 2023"
+        },
+        {
+          "id": 2690,
+          "number": 4,
+          "language": "espanhol",
+          "title": "Questão 4 - ENEM 2023"
+        },
+        {
+          "id": 2702,
+          "number": 5,
+          "language": "espanhol",
+          "title": "Questão 5 - ENEM 2023"
+        },
+        {
+          "id": 2576,
+          "number": 1,
+          "language": "ingles",
+          "title": "Questão 1 - ENEM 2023"
+        },
+        {
+          "id": 2668,
+          "number": 2,
+          "language": "ingles",
+          "title": "Questão 2 - ENEM 2023"
+        },
+        {
+          "id": 2680,
+          "number": 3,
+          "language": "ingles",
+          "title": "Questão 3 - ENEM 2023"
+        },
+        {
+          "id": 2691,
+          "number": 4,
+          "language": "ingles",
+          "title": "Questão 4 - ENEM 2023"
+        },
+        {
+          "id": 2703,
+          "number": 5,
+          "language": "ingles",
+          "title": "Questão 5 - ENEM 2023"
+        },
+        {
+          "id": 2645,
+          "number": 161,
+          "language": null,
+          "title": "Questão 161 - ENEM 2023"
+        },
+        {
+          "id": 2648,
+          "number": 164,
+          "language": null,
+          "title": "Questão 164 - ENEM 2023"
+        }
+      ],
+      "mismatchedDisciplines": 17,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 46,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140612,
+          "skill": 6,
+          "title": "Representações gráficas e cartográficas do espaço",
+          "score": 1
+        },
+        {
+          "number": 47,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 125687,
+          "skill": 9,
+          "title": "Organizações políticas e socioeconômicas",
+          "score": 1
+        },
+        {
+          "number": 48,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140453,
+          "skill": 17,
+          "title": "Tecnologia e territorialização da produção: agricultura e espaço agrário",
+          "score": 1
+        },
+        {
+          "number": 49,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140581,
+          "skill": 8,
+          "title": "Estados, fluxos populacionais e questões sociais",
+          "score": 1
+        },
+        {
+          "number": 50,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 141106,
+          "skill": 5,
+          "title": "Patrimônio cultural e diversidade: escravidão e relações sociais",
+          "score": 1
+        },
+        {
+          "number": 51,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 63635,
+          "skill": 1,
+          "title": "Fontes históricas e geográficas sobre a cultura: Palestina e Declaração Balfour",
+          "score": 1
+        },
+        {
+          "number": 52,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 140194,
+          "skill": 23,
+          "title": "Valores éticos e estruturação política: Paulo Freire e educação",
+          "score": 1
+        },
+        {
+          "number": 53,
+          "sourceDiscipline": "ciencias-humanas",
+          "officialDiscipline": "ciencias-humanas",
+          "itemCode": 141131,
+          "skill": 26,
+          "title": "Ocupação dos meios físicos e paisagem",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9344262295081968,
+      "status": "safe"
+    }
+  ]
+}
