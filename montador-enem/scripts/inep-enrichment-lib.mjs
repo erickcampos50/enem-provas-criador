@@ -200,11 +200,20 @@ function languageCodeForQuestion(language) {
   return normalized;
 }
 
+function normalizeLanguageCode(value) {
+  const raw = String(value ?? '').trim();
+  if (!raw) return '';
+  const numeric = Number(raw);
+  if (Number.isFinite(numeric) && Number.isInteger(numeric)) return String(numeric);
+  return raw;
+}
+
 function groupCandidates(items, languageCode = '') {
   const groups = new Map();
+  const normalizedLanguageCode = normalizeLanguageCode(languageCode);
   for (const item of items) {
-    const rowLanguage = String(item.TP_LINGUA ?? '').trim();
-    if (String(languageCode) !== rowLanguage) continue;
+    const rowLanguage = normalizeLanguageCode(item.TP_LINGUA);
+    if (normalizedLanguageCode !== rowLanguage) continue;
     const answer = String(item.TX_GABARITO ?? '').trim().toUpperCase();
     if (!/^[A-E]$/.test(answer)) continue;
     const area = String(item.SG_AREA ?? '').trim();
@@ -288,6 +297,7 @@ export {
   buildDisplayTitle,
   groupCandidates,
   inferSubject,
+  normalizeLanguageCode,
   inferTopic,
   languageCodeForQuestion,
   matchQuestionsToItems,
