@@ -139,14 +139,10 @@ function buildDisplayTitle(question, officialArea, skillCode = null) {
   const subject = officialSubject(officialArea, skillCode);
   const topic = officialSkillLabel(officialArea, skillCode) ?? subject;
   const anchor = findConservativeAnchor(officialArea, stem);
-  const number = Number(question.number ?? question.index);
-  const suffix = Number.isFinite(number) ? `Questão ${number}` : null;
 
   let displayTitle = topic;
   if (anchor && anchor.toLocaleLowerCase('pt-BR') !== topic.toLocaleLowerCase('pt-BR')) {
     displayTitle = `${topic}: ${anchor}`;
-  } else if (suffix) {
-    displayTitle = `${topic} · ${suffix}`;
   }
 
   return { subject, topic, displayTitle, anchor };
