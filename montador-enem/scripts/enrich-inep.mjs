@@ -145,8 +145,8 @@ function runProcess(command, args, { input, allowFailure = false } = {}) {
 async function runSqlite(databasePath, sql, { json = false } = {}) {
   const args = ['-batch'];
   if (json) args.push('-json');
-  args.push(databasePath, sql);
-  const result = await runProcess('sqlite3', args);
+  args.push(databasePath);
+  const result = await runProcess('sqlite3', args, { input: sql });
   if (!json) return result.stdout;
   const body = result.stdout.trim();
   if (!body) return [];
