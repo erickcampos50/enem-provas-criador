@@ -79,10 +79,10 @@ test('título pedagógico usa apenas o enunciado, sem consultar alternativa corr
     ],
   };
 
-  const generated = buildDisplayTitle(question, 'CN');
+  const generated = buildDisplayTitle(question, 'CN', 20);
   assert.equal(generated.subject, 'Física');
-  assert.equal(generated.topic, 'Cinemática');
-  assert.match(generated.displayTitle, /^Cinemática:/);
+  assert.equal(generated.topic, 'Movimentos de partículas, objetos e corpos');
+  assert.match(generated.displayTitle, /^Movimentos de partículas, objetos e corpos: lançamento vertical$/);
   assert.doesNotMatch(generated.displayTitle, /para baixo/i);
 });
 
@@ -90,9 +90,22 @@ test('amostra de questão de vacina recebe assunto e tópico úteis', () => {
   const generated = buildDisplayTitle({
     context: 'A tecnologia de vacinas de RNA mensageiro (RNAm) foi usada contra um vírus de RNA.',
     alternativesIntroduction: 'A imunização produzida por esse tipo de vacina é alcançada por meio da ação do RNAm.',
-  }, 'CN');
+  }, 'CN', 11);
 
   assert.equal(generated.subject, 'Biologia');
-  assert.ok(['Genética e biologia molecular', 'Imunologia e vacinas'].includes(generated.topic));
-  assert.notEqual(generated.displayTitle, 'Questão');
+  assert.equal(generated.topic, 'Biotecnologia: benefícios, limites e ética');
+  assert.match(generated.displayTitle, /vacinas de RNAm$/);
+});
+
+test('título de Humanas não sofre falso positivo de tópicos de outras áreas', () => {
+  const generated = buildDisplayTitle({
+    number: 52,
+    context: 'Paulo Freire discute a leitura do mundo e os valores que orientam a vida em sociedade.',
+    alternativesIntroduction: 'A reflexão apresentada destaca uma dimensão ética da organização social.',
+  }, 'CH', 23);
+
+  assert.equal(generated.subject, 'Ciências Humanas');
+  assert.equal(generated.topic, 'Valores éticos e estruturação política');
+  assert.match(generated.displayTitle, /Paulo Freire e educação$/);
+  assert.doesNotMatch(generated.displayTitle, /genética|biologia|tradução/i);
 });
