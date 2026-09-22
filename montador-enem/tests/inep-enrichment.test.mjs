@@ -117,5 +117,6 @@ test('título enriquecido sem âncora não repete o número da questão', () => 
     context: 'Texto genérico sem âncora temática específica.',
     alternativesIntroduction: '',
   }, 'CH', 6);
+  assert.equal(generated.displayTitle, 'Representações gráficas e cartográficas do espaço');
   assert.doesNotMatch(generated.displayTitle, /Quest[aã]o\s+46/i);
 });
