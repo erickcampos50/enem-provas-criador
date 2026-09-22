@@ -276,7 +276,19 @@ function renderSelected() {
 function renderQuestion(question, teacher = true) {
   const files = getUniqueQuestionFiles(question).map((url, index) => `<img src="${escapeHtml(url)}" alt="Imagem de apoio ${index + 1}" class="question-image">`).join('');
   const alternatives = (question.alternatives || []).map((alternative) => `<div class="alternative ${teacher && alternative.isCorrect ? 'correct' : ''}"><span class="alternative-letter">${escapeHtml(alternative.letter)})</span><div>${alternative.text ? renderMarkdown(alternative.text) : alternative.file ? `<img src="${escapeHtml(alternative.file)}" alt="Imagem da alternativa ${escapeHtml(alternative.letter)}" class="question-image">` : '<span>Sem texto ou imagem.</span>'}</div></div>`).join('');
-  return `<div><h3 class="h5">${escapeHtml(question.title)}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${escapeHtml(question.year)} · ${escapeHtml(question.discipline || 'Sem disciplina')}${question.language ? ` · ${escapeHtml(question.language)}` : ''}</div></div>`;
+  const metadata = [
+    question.year,
+    question.discipline || 'Sem disciplina',
+    question.language || null,
+    question.enrichment?.subject || null,
+    question.enrichment?.topic && question.enrichment.topic !== question.enrichment?.subject ? question.enrichment.topic : null,
+    question.inep?.skillCode != null ? `H${question.inep.skillCode}` : null,
+    question.inep?.itemCode != null ? `Item INEP ${question.inep.itemCode}` : null,
+  ].filter(Boolean).map((value) => escapeHtml(value)).join(' · ');
+  const provenance = question.sourceTitle && question.sourceTitle !== question.title
+    ? `<div class="small text-secondary mt-1">Título da fonte: ${escapeHtml(question.sourceTitle)}</div>`
+    : '';
+  return `<div><h3 class="h5">${escapeHtml(question.title)}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${metadata}</div>${provenance}</div>`;
 }
 
 async function showPreview(id) {
