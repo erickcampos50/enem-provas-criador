@@ -65,75 +65,19 @@ function formatQuestionHeading(question, fallbackTitle = '') {
   const hasNumber = Number.isFinite(number);
   const hasYear = Number.isFinite(year);
   const prefix = [
-    hasNumber ? `Q${number}` : null,
+    hasNumber ? 'Q' + number : null,
     hasYear ? String(year) : null,
   ].filter(Boolean).join(' ');
 
   const rawTitle = String(question?.title ?? fallbackTitle ?? '').trim();
   const genericTitlePattern = hasNumber && hasYear
-    ? new RegExp(`^\\s*Quest[aã]o\\s+${number}\\s*(?:[-–—:]\\s*)?(?:ENEM\\s*)?${year}\\s*import $ from 'jquery';
-import * as bootstrap from 'bootstrap';
-import './styles.css';
-import { DbClient } from './db-client.js';
-import { loadDatabaseBytes } from './cache.js';
-import { buildVariants } from './variants.js';
-import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
-import { renderMarkdown } from './markdown.js';
-import { clearDraft, dismissWelcome, downloadText, encodeProofLink, exportProof, parseProof, parseProofLink, readDraft, shouldShowWelcome, writeDraft } from './storage.js';
-
-window.$ = $;
-window.bootstrap = bootstrap;
-
-const db = new DbClient();
-const state = {
-  filters: { q: '', year: '', discipline: '', language: '', hasImages: false },
-  results: [],
-  totalResults: 0,
-  page: 1,
-  pageSize: 20,
-  selected: [],
-  questionCache: new Map(),
-  header: {
-    institution: '', title: '', subject: '', teacher: '', className: '', date: '', period: '', duration: '', totalValue: '', instructions: '',
-  },
-  variantsCount: 1,
-  shuffleIncorrect: false,
-  includeAnswerSheet: true,
-  previewTeacher: false,
-  previewVariant: 0,
-  filtersData: { years: [], disciplines: [], languages: [] },
-  database: { sha256: '', questionCount: 0, examCount: 0 },
-  draftSavedAt: null,
-  pendingSharedProof: null,
-};
-
-let draftTimer;
-let previewTimer;
-let draggedId = null;
-let searchRequestId = 0;
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
-}
-
-function stripEnem(value) {
-  return String(value ?? '')
-    .replace(/\bENEM\b/gi, '')
-    .replace(/\s*-\s*-\s*/g, ' - ')
-    .replace(/\s{2,}/g, ' ')
-    .replace(/\s*-\s*$/g, '')
-    .trim()
-    .replace(/\s*-\s*$/, '')
-    .replace(/^\s*-\s*/, '');
-}
-
-, 'i')
+    ? new RegExp('^\\s*Quest[aã]o\\s+' + number + '\\s*(?:[-–—:]\\s*)?(?:ENEM\\s*)?' + year + '\\s*$', 'i')
     : null;
   const title = genericTitlePattern?.test(rawTitle)
     ? ''
     : formatDisplayTitle(rawTitle);
 
-  if (prefix && title) return `${prefix} — ${title}`;
+  if (prefix && title) return prefix + ' — ' + title;
   return prefix || title || rawTitle;
 }
 
