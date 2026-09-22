@@ -13,6 +13,12 @@ on:
       - ".github/workflows/enrich-database.yml"
       - "montador-enem/scripts/enrich-inep.mjs"
       - "montador-enem/scripts/inep-enrichment-lib.mjs"
+      - "montador-enem/scripts/inep-skill-labels.mjs"
+      - "montador-enem/tests/inep-enrichment.test.mjs"
+
+concurrency:
+  group: enrich-enem-database
+  cancel-in-progress: true
 
 permissions:
   contents: write
