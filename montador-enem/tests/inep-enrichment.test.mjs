@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildDisplayTitle,
   matchQuestionsToItems,
+  normalizeLanguageCode,
   parseDelimited,
 } from '../scripts/inep-enrichment-lib.mjs';
 
@@ -16,6 +17,34 @@ test('parseDelimited lê o cabeçalho oficial com ponto e vírgula', () => {
   assert.equal(rows.length, 2);
   assert.equal(rows[0].CO_ITEM, '84422');
   assert.equal(rows[1].CO_HABILIDADE, '3');
+});
+
+
+test('normaliza TP_LINGUA decimal dos snapshots', () => {
+  assert.equal(normalizeLanguageCode('0.0'), '0');
+  assert.equal(normalizeLanguageCode('1.0'), '1');
+  assert.equal(normalizeLanguageCode(1), '1');
+  assert.equal(normalizeLanguageCode(''), '');
+});
+
+test('casamento de língua aceita TP_LINGUA 0.0 e 1.0', () => {
+  const questions = [
+    { id: 1, number: 1, language: 'ingles', correctAlternative: 'C' },
+    { id: 2, number: 2, language: 'ingles', correctAlternative: 'A' },
+    { id: 3, number: 3, language: 'ingles', correctAlternative: 'B' },
+  ];
+  const items = [
+    { CO_POSICAO: '1', SG_AREA: 'LC', CO_ITEM: '1', TX_GABARITO: 'C', CO_HABILIDADE: '7', CO_PROVA: '889', TP_LINGUA: '0.0' },
+    { CO_POSICAO: '2', SG_AREA: 'LC', CO_ITEM: '2', TX_GABARITO: 'A', CO_HABILIDADE: '8', CO_PROVA: '889', TP_LINGUA: '0.0' },
+    { CO_POSICAO: '3', SG_AREA: 'LC', CO_ITEM: '3', TX_GABARITO: 'B', CO_HABILIDADE: '5', CO_PROVA: '889', TP_LINGUA: '0.0' },
+  ];
+  const result = matchQuestionsToItems(questions, items, {
+    minCovered: 3,
+    minPrecision: 1,
+    offsetRange: 0,
+  });
+  assert.equal(result.assigned.size, 3);
+  assert.equal(result.unresolved.length, 0);
 });
 
 test('casamento usa gabarito e posição e não confia na disciplina da fonte', () => {
