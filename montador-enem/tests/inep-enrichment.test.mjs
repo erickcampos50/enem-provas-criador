@@ -109,3 +109,13 @@ test('título de Humanas não sofre falso positivo de tópicos de outras áreas'
   assert.match(generated.displayTitle, /Paulo Freire e educação$/);
   assert.doesNotMatch(generated.displayTitle, /genética|biologia|tradução/i);
 });
+
+
+test('título enriquecido sem âncora não repete o número da questão', () => {
+  const generated = buildDisplayTitle({
+    number: 46,
+    context: 'Texto genérico sem âncora temática específica.',
+    alternativesIntroduction: '',
+  }, 'CH', 6);
+  assert.doesNotMatch(generated.displayTitle, /Quest[aã]o\s+46/i);
+});
