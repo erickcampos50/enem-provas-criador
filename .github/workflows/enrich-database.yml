@@ -11,6 +11,8 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/enrich-database.yml"
+      - "montador-enem/scripts/enrich-inep.mjs"
+      - "montador-enem/scripts/inep-enrichment-lib.mjs"
 
 permissions:
   contents: write
