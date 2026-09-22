@@ -24,6 +24,14 @@ npm run build:database -- --delay-ms 500 --verbose
 
 O coletor gera um arquivo temporário e só substitui `../enem.sqlite` depois de validar o conteúdo e o `integrity_check`.
 
+## Enriquecimento com microdados do INEP
+
+O procedimento completo para auditar, aplicar e publicar o enriquecimento das questões está documentado em:
+
+`../documentation/INEP_ENRICHMENT_RUNBOOK.md`
+
+O guia cobre execução local e via GitHub Actions, inclusão de novos anos, critérios de segurança, relatórios, `TP_LINGUA`, encoding, deploy e rollback.
+
 ## Testes
 
 ```bash
