@@ -48,7 +48,7 @@ jobs:
         run: |
           node scripts/enrich-inep.mjs \
             --dry-run \
-            --safe-min-coverage 0.90 \
+            --safe-min-coverage 0.93 \
             --report-json ../data/inep/audit/latest.json \
             --report-md ../data/inep/audit/latest.md \
             --verbose
@@ -59,7 +59,7 @@ jobs:
 
       - name: Commit audit report
         run: |
-          if git diff --quiet -- data/inep/audit/latest.json data/inep/audit/latest.md; then
+          if [ -z "$(git status --porcelain -- data/inep/audit/latest.json data/inep/audit/latest.md)" ]; then
             echo "Audit report unchanged."
             exit 0
           fi
