@@ -24,6 +24,7 @@ const DEFAULT_CACHE_DIR = resolve(projectRoot, '.cache', 'enem-microdados');
 const DEFAULT_OFFSET_RANGE = 200;
 const DEFAULT_MIN_COVERED = 15;
 const DEFAULT_MIN_PRECISION = 0.85;
+const DEFAULT_SAFE_MIN_COVERAGE = 0.90;
 
 class EnrichmentError extends Error {
   constructor(message, options = {}) {
@@ -46,6 +47,9 @@ Opções:
   --dry-run              Faz download/casamento e mostra relatório sem gravar no SQLite
   --no-titles            Grava só metadados oficiais, sem título pedagógico heurístico
   --verbose              Exibe detalhes de download e casamento
+  --report-json PATH     Grava relatório estruturado da execução
+  --report-md PATH       Grava relatório Markdown por ano
+  --safe-min-coverage N  Cobertura mínima para classificar ano como seguro (padrão: 0.90)
   --help                 Exibe esta ajuda
 `;
 }
@@ -73,6 +77,9 @@ function parseArgs(argv) {
     dryRun: false,
     titles: true,
     verbose: false,
+    reportJson: null,
+    reportMd: null,
+    safeMinCoverage: DEFAULT_SAFE_MIN_COVERAGE,
     help: false,
   };
 
@@ -89,6 +96,8 @@ function parseArgs(argv) {
       if (!value) throw new EnrichmentError(`${flag} exige um valor.`);
       if (flag === '--database') options.database = resolve(process.cwd(), value);
       else if (flag === '--cache-dir') options.cacheDir = resolve(process.cwd(), value);
+      else if (flag === '--report-json') options.reportJson = resolve(process.cwd(), value);
+      else if (flag === '--report-md') options.reportMd = resolve(process.cwd(), value);
       else if (flag === '--offset-range') options.offsetRange = parseInteger(value, flag);
       else if (flag === '--min-covered') options.minCovered = parseInteger(value, flag, { min: 1 });
       else if (flag === '--min-precision') {
@@ -97,6 +106,12 @@ function parseArgs(argv) {
           throw new EnrichmentError('--min-precision deve estar entre 0 e 1.');
         }
         options.minPrecision = precision;
+      } else if (flag === '--safe-min-coverage') {
+        const coverage = Number(value);
+        if (!Number.isFinite(coverage) || coverage <= 0 || coverage > 1) {
+          throw new EnrichmentError('--safe-min-coverage deve estar entre 0 e 1.');
+        }
+        options.safeMinCoverage = coverage;
       } else if (flag === '--years') {
         const years = value.split(',').map((part) => parseInteger(part.trim(), '--years', { min: 1998 }));
         options.years = [...new Set(years)].sort((a, b) => a - b);
@@ -508,14 +523,106 @@ async function processYear(database, year, options) {
     if (integrity !== 'ok') throw new EnrichmentError(`PRAGMA integrity_check falhou após ${year}: ${integrity}`);
   }
 
+  const matchScores = assignments.map(({ match }) => Number(match.precision)).filter(Number.isFinite);
+  const offsets = [...new Set(assignments.map(({ match }) => Number(match.offset)).filter(Number.isFinite))]
+    .sort((left, right) => left - right);
+  const unresolvedQuestions = unresolved.map((question) => ({
+    id: Number(question.id),
+    number: Number(question.number),
+    language: question.language ?? null,
+    title: question.title ?? null,
+  }));
+
   return {
     year,
     total: questions.length,
     mapped: assignments.length,
     unresolved: unresolved.length,
+    unresolvedQuestions,
     mismatchedDisciplines,
+    minMatchPrecision: matchScores.length ? Math.min(...matchScores) : null,
+    averageMatchPrecision: matchScores.length
+      ? matchScores.reduce((sum, value) => sum + value, 0) / matchScores.length
+      : null,
+    offsets,
     samples,
   };
+}
+
+function normalizedAuditReport(reports, options) {
+  const years = reports.map((report) => {
+    const coverage = report.total ? report.mapped / report.total : 0;
+    const status = report.total === 0
+      ? 'empty'
+      : coverage >= options.safeMinCoverage
+        ? 'safe'
+        : 'review';
+    return {
+      ...report,
+      coverage,
+      status,
+    };
+  });
+  return {
+    generatedAt: new Date().toISOString(),
+    dryRun: options.dryRun,
+    thresholds: {
+      minPrecision: options.minPrecision,
+      safeMinCoverage: options.safeMinCoverage,
+      minCovered: options.minCovered,
+      offsetRange: options.offsetRange,
+    },
+    summary: {
+      years: years.length,
+      safeYears: years.filter((report) => report.status === 'safe').map((report) => report.year),
+      reviewYears: years.filter((report) => report.status === 'review').map((report) => report.year),
+      emptyYears: years.filter((report) => report.status === 'empty').map((report) => report.year),
+      totalQuestions: years.reduce((sum, report) => sum + report.total, 0),
+      mappedQuestions: years.reduce((sum, report) => sum + report.mapped, 0),
+    },
+    years,
+  };
+}
+
+function auditMarkdown(audit) {
+  const lines = [
+    '# Auditoria de enriquecimento INEP',
+    '',
+    `Gerado em: ${audit.generatedAt}`,
+    '',
+    `Critérios: precisão mínima ${(audit.thresholds.minPrecision * 100).toFixed(0)}%; cobertura segura ${(audit.thresholds.safeMinCoverage * 100).toFixed(0)}%.`,
+    '',
+    '| Ano | Questões | Mapeadas | Cobertura | Não resolvidas | Divergências disciplina | Precisão mínima | Status |',
+    '| ---: | ---: | ---: | ---: | ---: | ---: | ---: | :--- |',
+  ];
+  for (const report of audit.years) {
+    const precision = report.minMatchPrecision == null ? '—' : `${(report.minMatchPrecision * 100).toFixed(1)}%`;
+    lines.push(
+      `| ${report.year} | ${report.total} | ${report.mapped} | ${(report.coverage * 100).toFixed(1)}% | ${report.unresolved} | ${report.mismatchedDisciplines} | ${precision} | ${report.status} |`,
+    );
+  }
+  lines.push(
+    '',
+    `**Anos seguros:** ${audit.summary.safeYears.join(', ') || 'nenhum'}`,
+    '',
+    `**Anos para revisão:** ${audit.summary.reviewYears.join(', ') || 'nenhum'}`,
+    '',
+  );
+  return lines.join('\n');
+}
+
+async function writeAuditReports(reports, options) {
+  if (!options.reportJson && !options.reportMd) return null;
+  const audit = normalizedAuditReport(reports, options);
+  if (options.reportJson) {
+    await mkdir(dirname(options.reportJson), { recursive: true });
+    await writeFile(options.reportJson, JSON.stringify(audit, null, 2) + '\n', 'utf8');
+  }
+  if (options.reportMd) {
+    await mkdir(dirname(options.reportMd), { recursive: true });
+    await writeFile(options.reportMd, auditMarkdown(audit) + '\n', 'utf8');
+  }
+  return audit;
 }
 
 async function main() {
@@ -561,13 +668,21 @@ async function main() {
   const total = reports.reduce((sum, report) => sum + report.total, 0);
   const mapped = reports.reduce((sum, report) => sum + report.mapped, 0);
   console.log(`\nTotal: ${mapped}/${total} questões vinculadas a itens oficiais.`);
+  const audit = await writeAuditReports(reports, options);
+  if (audit) {
+    console.log(`Anos seguros: ${audit.summary.safeYears.join(', ') || 'nenhum'}`);
+    console.log(`Anos para revisão: ${audit.summary.reviewYears.join(', ') || 'nenhum'}`);
+  }
   if (options.dryRun) console.log('DRY RUN: nenhuma alteração foi gravada.');
 }
 
 export {
   ENRICHMENT_SCHEMA,
+  auditMarkdown,
+  normalizedAuditReport,
   parseArgs,
   processYear,
+  writeAuditReports,
 };
 
 const invoked = process.argv[1] ? resolve(process.argv[1]) : null;
