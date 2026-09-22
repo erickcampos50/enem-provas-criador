@@ -1,3 +1,5 @@
+import { findConservativeAnchor, officialSkillLabel, officialSubject } from './inep-skill-labels.mjs';
+
 const AREA_TO_DISCIPLINE = Object.freeze({
   LC: 'linguagens',
   CH: 'ciencias-humanas',
@@ -102,38 +104,12 @@ function countRuleHits(text, rules) {
   return hits;
 }
 
-function inferSubject(area, text) {
-  const groups = SUBJECT_RULES[area] ?? [];
-  let best = null;
-  let bestScore = -1;
-  for (const [subject, rules] of groups) {
-    const score = countRuleHits(text, rules);
-    if (score > bestScore) {
-      best = subject;
-      bestScore = score;
-    }
-  }
-  if (bestScore <= 0) {
-    return AREA_TO_DISCIPLINE[area] === 'matematica'
-      ? 'Matemática'
-      : area === 'CN'
-        ? 'Ciências da Natureza'
-        : area === 'CH'
-          ? 'Ciências Humanas'
-          : 'Linguagens';
-  }
-  return best;
+function inferSubject(area, text, skillCode = null) {
+  return officialSubject(area, skillCode);
 }
 
-function inferTopic(text, subject) {
-  for (const [topic, rule] of TOPIC_RULES) {
-    if (rule.test(text)) {
-      rule.lastIndex = 0;
-      return topic;
-    }
-    rule.lastIndex = 0;
-  }
-  return subject;
+function inferTopic(text, subject, area = null, skillCode = null) {
+  return officialSkillLabel(area, skillCode) ?? subject;
 }
 
 function tokenizeKeywords(text) {
@@ -154,30 +130,26 @@ function titleCaseTerm(term) {
   return term ? term.charAt(0).toLocaleUpperCase('pt-BR') + term.slice(1) : term;
 }
 
-function buildDisplayTitle(question, officialArea) {
+function buildDisplayTitle(question, officialArea, skillCode = null) {
   const stem = normalizeForRules(
     [question.context, question.alternativesIntroduction ?? question.alternatives_introduction]
       .filter(Boolean)
       .join(' '),
   );
-  const subject = inferSubject(officialArea, stem);
-  const topic = inferTopic(stem, subject);
-  const keywords = tokenizeKeywords(stem)
-    .filter((token) => !topic.toLocaleLowerCase('pt-BR').includes(token))
-    .slice(0, 2);
+  const subject = officialSubject(officialArea, skillCode);
+  const topic = officialSkillLabel(officialArea, skillCode) ?? subject;
+  const anchor = findConservativeAnchor(officialArea, stem);
+  const number = Number(question.number ?? question.index);
+  const suffix = Number.isFinite(number) ? `Questão ${number}` : null;
 
-  let displayTitle;
-  if (topic !== subject) {
-    displayTitle = keywords.length
-      ? `${topic}: ${keywords.map(titleCaseTerm).join(' e ')}`
-      : topic;
-  } else if (keywords.length) {
-    displayTitle = `${subject}: ${keywords.map(titleCaseTerm).join(' e ')}`;
-  } else {
-    displayTitle = subject;
+  let displayTitle = topic;
+  if (anchor && anchor.toLocaleLowerCase('pt-BR') !== topic.toLocaleLowerCase('pt-BR')) {
+    displayTitle = `${topic}: ${anchor}`;
+  } else if (suffix) {
+    displayTitle = `${topic} · ${suffix}`;
   }
 
-  return { subject, topic, displayTitle };
+  return { subject, topic, displayTitle, anchor };
 }
 
 function parseDelimited(text) {
@@ -324,6 +296,8 @@ export {
   languageCodeForQuestion,
   matchQuestionsToItems,
   normalizeForRules,
+  officialSkillLabel,
+  officialSubject,
   parseDelimited,
   sqlValue,
   tokenizeKeywords,
