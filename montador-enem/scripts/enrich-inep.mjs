@@ -379,7 +379,7 @@ function metadataInsert(question, match, year) {
 }
 
 function enrichmentInsert(question, match) {
-  const generated = buildDisplayTitle(question, match.area);
+  const generated = buildDisplayTitle(question, match.area, match.item.CO_HABILIDADE);
   return {
     ...generated,
     sql: `INSERT INTO question_enrichment (
@@ -390,7 +390,7 @@ function enrichmentInsert(question, match) {
       ${sqlValue(generated.topic)},
       NULL,
       ${sqlValue(generated.displayTitle)},
-      'heuristic-v1+inep-area',
+      'mixed:inep-skill+conservative-anchor-v2',
       CURRENT_TIMESTAMP
     )
     ON CONFLICT(question_id) DO UPDATE SET
@@ -400,7 +400,8 @@ function enrichmentInsert(question, match) {
       display_title=excluded.display_title,
       source=excluded.source,
       generated_at=CURRENT_TIMESTAMP
-    WHERE question_enrichment.source LIKE 'heuristic%';`,
+    WHERE question_enrichment.source LIKE 'heuristic%'
+       OR question_enrichment.source LIKE 'mixed:%';`,
   };
 }
 
@@ -464,7 +465,7 @@ async function processYear(database, year, options) {
     `DELETE FROM question_inep_metadata
       WHERE question_id IN (SELECT id FROM questions WHERE year = ${Number(year)});`,
     `DELETE FROM question_enrichment
-      WHERE source LIKE 'heuristic%'
+      WHERE (source LIKE 'heuristic%' OR source LIKE 'mixed:%')
         AND question_id IN (SELECT id FROM questions WHERE year = ${Number(year)});`,
   );
 
