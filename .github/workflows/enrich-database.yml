@@ -6,7 +6,7 @@ on:
       years:
         description: "Anos separados por vírgula"
         required: false
-        default: "2023"
+        default: "2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023"
   push:
     branches: [main]
     paths:
@@ -51,7 +51,7 @@ jobs:
       - name: Enrich database from official INEP microdata
         working-directory: montador-enem
         env:
-          YEARS: ${{ github.event.inputs.years || '2023' }}
+          YEARS: ${{ github.event.inputs.years || '2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023' }}
         run: node scripts/enrich-inep.mjs --years "$YEARS" --verbose
 
       - name: Validate application
@@ -77,4 +77,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add enem.sqlite docs/enem.sqlite docs/enem.sqlite.meta.json
           git commit -m "data: enrich ENEM database with official INEP metadata"
+          git pull --rebase origin main
           git push
