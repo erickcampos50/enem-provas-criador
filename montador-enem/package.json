@@ -18,7 +18,8 @@
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser-smoke.mjs",
     "preview:pages": "node scripts/serve-pages.mjs",
-    "clean:pages": "node scripts/clean-pages.mjs"
+    "clean:pages": "node scripts/clean-pages.mjs",
+    "audit:inep": "node scripts/enrich-inep.mjs --dry-run --safe-min-coverage 0.93 --report-json ../data/inep/audit/latest.json --report-md ../data/inep/audit/latest.md --verbose"
   },
   "dependencies": {
     "@sqlite.org/sqlite-wasm": "3.53.4-build1",
