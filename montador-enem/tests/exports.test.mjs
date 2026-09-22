@@ -72,3 +72,15 @@ test('não repete o título genérico de origem quando não há descritor enriqu
     'Q52 2023',
   );
 });
+
+
+test('remove Questão N do fim do descritor na prova', () => {
+  assert.equal(
+    formatQuestionOriginHeading({
+      number: 46,
+      year: 2023,
+      title: 'Representações gráficas e cartográficas do espaço · Questão 46',
+    }),
+    'Q46 2023 — Representações gráficas e cartográficas do espaço',
+  );
+});
