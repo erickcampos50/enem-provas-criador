@@ -257,19 +257,32 @@ async function extractItemsCsv(zipPath, csvPath, year) {
 }
 
 async function loadOfficialItems(year, options) {
-  const csvPath = join(options.cacheDir, `ITENS_PROVA_${year}.csv`);
-  if (!await fileExists(csvPath)) {
-    const zipPath = join(options.cacheDir, `microdados_enem_${year}.zip`);
-    if (!await fileExists(zipPath)) {
-      await downloadFile(
-        `https://download.inep.gov.br/microdados/microdados_enem_${year}.zip`,
-        zipPath,
-        options,
-      );
+  const bundledCandidates = [
+    resolve(projectRoot, 'data', 'inep', `ITENS_PROVA_${year}.csv`),
+    resolve(projectRoot, 'data', 'inep', `ITENS_PROVA_${year}_AZUL.csv`),
+  ];
+  const bundledPath = (await Promise.all(
+    bundledCandidates.map(async (candidate) => await fileExists(candidate) ? candidate : null),
+  )).find(Boolean);
+
+  let csvPath = bundledPath;
+  if (csvPath) {
+    log(options, `Usando snapshot compacto de itens: ${csvPath}`);
+  } else {
+    csvPath = join(options.cacheDir, `ITENS_PROVA_${year}.csv`);
+    if (!await fileExists(csvPath)) {
+      const zipPath = join(options.cacheDir, `microdados_enem_${year}.zip`);
+      if (!await fileExists(zipPath)) {
+        await downloadFile(
+          `https://download.inep.gov.br/microdados/microdados_enem_${year}.zip`,
+          zipPath,
+          options,
+        );
+      }
+      log(options, `Extraindo ITENS_PROVA_${year}.csv`);
+      await extractItemsCsv(zipPath, csvPath, year);
+      if (!options.keepZip) await rm(zipPath, { force: true });
     }
-    log(options, `Extraindo ITENS_PROVA_${year}.csv`);
-    await extractItemsCsv(zipPath, csvPath, year);
-    if (!options.keepZip) await rm(zipPath, { force: true });
   }
 
   const buffer = await readFile(csvPath);
