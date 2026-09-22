@@ -169,14 +169,39 @@ async function fileExists(path) {
 async function downloadFile(url, destination, options) {
   await mkdir(dirname(destination), { recursive: true });
   const temporary = `${destination}.part`;
+  const parsed = new URL(url);
   log(options, `Baixando ${url}`);
-  const response = await fetch(url, {
-    headers: { 'user-agent': 'enem-criador-inep-enrichment/1.0' },
-  });
-  if (!response.ok || !response.body) {
-    throw new EnrichmentError(`HTTP ${response.status} ao baixar ${url}`);
+
+  const commonArgs = [
+    '--fail',
+    '--location',
+    '--retry', '3',
+    '--retry-all-errors',
+    '--connect-timeout', '30',
+    '--output', temporary,
+    url,
+  ];
+
+  let result = await runProcess('curl', commonArgs, { allowFailure: true });
+  if (result.code !== 0 && parsed.hostname === 'download.inep.gov.br') {
+    log(
+      options,
+      'curl com verificação TLS falhou; tentando modo de compatibilidade TLS somente para download.inep.gov.br',
+    );
+    result = await runProcess(
+      'curl',
+      ['--insecure', ...commonArgs],
+      { allowFailure: true },
+    );
   }
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(temporary));
+
+  if (result.code !== 0) {
+    await rm(temporary, { force: true }).catch(() => {});
+    throw new EnrichmentError(
+      `Falha ao baixar ${url} com curl: ${result.stderr.trim() || `código ${result.code}`}`,
+    );
+  }
+
   await rename(temporary, destination);
 }
 
