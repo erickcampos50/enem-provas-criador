@@ -301,7 +301,7 @@ async function loadOfficialItems(year, options) {
   }
 
   const buffer = await readFile(csvPath);
-  const text = buffer.toString('latin1');
+  const text = buffer.toString(bundledPath ? 'utf8' : 'latin1');
   const rows = parseDelimited(text);
   if (!rows.length || !('CO_POSICAO' in rows[0]) || !('TX_GABARITO' in rows[0])) {
     throw new EnrichmentError(`ITENS_PROVA_${year}.csv não contém as colunas esperadas.`);
