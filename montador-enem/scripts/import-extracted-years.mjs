@@ -96,6 +96,13 @@ function questionKey(year, number, language) {
   return `${year}:${number}:${language ?? ''}`;
 }
 
+function normalizeLabel(value) {
+  return String(value ?? '')
+    .replace(/[\u00a0\u2007\u202f\u2009]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function assetKeyToRelative(key) {
   return String(key).replace(/^asset:/, '');
 }
@@ -169,12 +176,12 @@ function importYear(db, exam, questions, { verbose }) {
   for (const discipline of exam.disciplines ?? []) {
     db.prepare(
       `INSERT OR IGNORE INTO exam_disciplines (year, value, label) VALUES (?, ?, ?)`,
-    ).run(year, discipline.value, discipline.label);
+    ).run(year, discipline.value, normalizeLabel(discipline.label));
   }
   for (const language of exam.languages ?? []) {
     db.prepare(
       `INSERT OR IGNORE INTO exam_languages (year, value, label) VALUES (?, ?, ?)`,
-    ).run(year, language.value, language.label);
+    ).run(year, language.value, normalizeLabel(language.label));
   }
 
   const idByNaturalKey = new Map();
