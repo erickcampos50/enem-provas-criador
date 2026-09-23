@@ -306,19 +306,20 @@ function getFilters() {
       ORDER BY year DESC`,
   ).map((row) => ({ value: Number(asNumber(row.value)), label: row.label }));
 
+  // One option per value: labels may differ only by NBSP vs space across years.
   const disciplines = executeRows(
     db,
-    `SELECT value, label
+    `SELECT value, MIN(label) AS label
        FROM exam_disciplines
-      GROUP BY value, label
+      GROUP BY value
       ORDER BY label COLLATE NOCASE, value`,
   );
 
   const languages = executeRows(
     db,
-    `SELECT value, label
+    `SELECT value, MIN(label) AS label
        FROM exam_languages
-      GROUP BY value, label
+      GROUP BY value
       ORDER BY label COLLATE NOCASE, value`,
   );
 

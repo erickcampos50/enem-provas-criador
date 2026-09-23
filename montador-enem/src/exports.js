@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { resolveAssetUrl } from './assets.js';
 import { renderMarkdown } from './markdown.js';
 import { buildAnswerKey } from './variants.js';
 
@@ -90,7 +91,8 @@ function escapeHtml(value) {
 
 function imageMarkup(url, alt) {
   if (!url) return '';
-  return `<img class="question-image" src="${escapeHtml(url)}" alt="${escapeHtml(alt)}">`;
+  const resolved = resolveAssetUrl(url, { absolute: true });
+  return `<img class="question-image" src="${escapeHtml(resolved)}" alt="${escapeHtml(alt)}">`;
 }
 
 function imageUrlsFromText(value) {
@@ -261,21 +263,25 @@ export function renderHtmlDocument(header, variant, teacher, includeAnswerSheet)
   return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + escapeHtml(header.title || 'Avaliação') + ' — Variante ' + escapeHtml(variant.label) + '</title><style>' + PRINT_CSS + '</style></head><body><main class="exam-page">' + headerHtml(header, variant, teacher) + questions + (includeAnswerSheet ? answerSheet(header, variant) : '') + key + '</main></body></html>';
 }
 
+function resolveAssetUrlsInText(value) {
+  return String(value ?? '').replace(/asset:[^\s\)\]"']+/g, (match) => resolveAssetUrl(match, { absolute: true }));
+}
+
 export function renderMarkdownDocument(header, variant, teacher, includeAnswerSheet) {
   const lines = [`# ${header.title || 'Avaliação'}`, `**Variante ${variant.label}**`, ''];
   if (header.institution) lines.push(`**Instituição:** ${header.institution}`);
   if (header.subject) lines.push(`**Disciplina:** ${header.subject}`);
   if (header.teacher) lines.push(`**Professor:** ${header.teacher}`);
-  if (header.instructions) lines.push('', header.instructions);
+  if (header.instructions) lines.push('', resolveAssetUrlsInText(header.instructions));
   lines.push('');
   variant.questions.forEach((question, index) => {
-    lines.push(`## ${index + 1}. ${formatQuestionOriginHeading(question)}`, '', question.context ?? '');
-    getUniqueQuestionFiles(question).forEach((url, imageIndex) => lines.push('', `![Imagem de apoio ${imageIndex + 1}](${url})`));
-    if (question.alternativesIntroduction) lines.push('', question.alternativesIntroduction);
+    lines.push(`## ${index + 1}. ${formatQuestionOriginHeading(question)}`, '', resolveAssetUrlsInText(question.context ?? ''));
+    getUniqueQuestionFiles(question).forEach((url, imageIndex) => lines.push('', `![Imagem de apoio ${imageIndex + 1}](${resolveAssetUrl(url, { absolute: true })})`));
+    if (question.alternativesIntroduction) lines.push('', resolveAssetUrlsInText(question.alternativesIntroduction));
     question.alternatives.forEach((alternative) => {
       const marker = teacher && alternative.isCorrect ? ' ✅' : '';
-      lines.push('', `- **${alternative.letter})**${marker} ${alternative.text ?? ''}`);
-      if (alternative.file) lines.push(`  ![Imagem da alternativa ${alternative.letter}](${alternative.file})`);
+      lines.push('', `- **${alternative.letter})**${marker} ${resolveAssetUrlsInText(alternative.text ?? '')}`);
+      if (alternative.file) lines.push(`  ![Imagem da alternativa ${alternative.letter}](${resolveAssetUrl(alternative.file, { absolute: true })})`);
     });
     lines.push('');
   });

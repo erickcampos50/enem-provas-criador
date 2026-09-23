@@ -21,16 +21,32 @@ export async function loadDatabaseBytes() {
   }
 
   const cache = await caches.open(cacheName);
-  let response = await cache.match(assetUrl('enem.sqlite'));
+  const cacheKey = assetUrl('enem.sqlite');
+  let response = await cache.match(cacheKey);
   let cached = Boolean(response);
   if (!response) {
-    response = await fetch(assetUrl('enem.sqlite'), { cache: 'no-cache' });
+    response = await fetch(cacheKey, { cache: 'no-cache' });
     if (!response.ok) throw new Error('Não foi possível baixar o banco SQLite.');
-    await cache.put(assetUrl('enem.sqlite'), response.clone());
-    cached = false;
+    // Cache.put is best-effort: some browsers reject certain responses
+    // (empty Content-Type in Vite dev, opaque/redirected, quota).
+    // Never block app startup on cache write failures.
+    try {
+      await cache.put(cacheKey, response.clone());
+      cached = false;
+    } catch {
+      cached = false;
+    }
   }
 
-  const names = await caches.keys();
-  await Promise.all(names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== cacheName).map((name) => caches.delete(name)));
+  try {
+    const names = await caches.keys();
+    await Promise.all(
+      names
+        .filter((name) => name.startsWith(CACHE_PREFIX) && name !== cacheName)
+        .map((name) => caches.delete(name)),
+    );
+  } catch {
+    // ignore cache cleanup errors
+  }
   return { bytes: await responseBytes(response), manifest, cached };
 }

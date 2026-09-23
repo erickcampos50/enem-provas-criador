@@ -1,0 +1,227 @@
+{
+  "generatedAt": "2026-09-23T19:39:46.864Z",
+  "dryRun": true,
+  "thresholds": {
+    "minPrecision": 0.85,
+    "safeMinCoverage": 0.93,
+    "minCovered": 15,
+    "offsetRange": 200
+  },
+  "summary": {
+    "years": 2,
+    "safeYears": [
+      2024,
+      2025
+    ],
+    "reviewYears": [],
+    "emptyYears": [],
+    "totalQuestions": 370,
+    "mappedQuestions": 366
+  },
+  "years": [
+    {
+      "year": 2024,
+      "total": 185,
+      "mapped": 184,
+      "unresolved": 1,
+      "unresolvedQuestions": [
+        {
+          "id": 2891,
+          "number": 129,
+          "language": null,
+          "title": "Questão 129 - ENEM 2024 (Anulado)"
+        }
+      ],
+      "mismatchedDisciplines": 0,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 140710,
+          "skill": 7,
+          "title": "Relações entre textos em língua estrangeira e portuguesa",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 140789,
+          "skill": 8,
+          "title": "Diversidade cultural em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 141730,
+          "skill": 8,
+          "title": "Diversidade cultural em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 111888,
+          "skill": 5,
+          "title": "Vocabulário e tema em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 140760,
+          "skill": 6,
+          "title": "Língua estrangeira como acesso a informação e cultura: poesia e linguagem literária",
+          "score": 1
+        },
+        {
+          "number": 1,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 61929,
+          "skill": 6,
+          "title": "Língua estrangeira como acesso a informação e cultura",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 118194,
+          "skill": 5,
+          "title": "Vocabulário e tema em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 87876,
+          "skill": 7,
+          "title": "Relações entre textos em língua estrangeira e portuguesa",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9945945945945946,
+      "status": "safe"
+    },
+    {
+      "year": 2025,
+      "total": 185,
+      "mapped": 182,
+      "unresolved": 3,
+      "unresolvedQuestions": [
+        {
+          "id": 3070,
+          "number": 123,
+          "language": null,
+          "title": "Questão 123 - ENEM 2025 (Anulado)"
+        },
+        {
+          "id": 3079,
+          "number": 132,
+          "language": null,
+          "title": "Questão 132 - ENEM 2025 (Anulado)"
+        },
+        {
+          "id": 3121,
+          "number": 174,
+          "language": null,
+          "title": "Questão 174 - ENEM 2025 (Anulado)"
+        }
+      ],
+      "mismatchedDisciplines": 0,
+      "minMatchPrecision": 1,
+      "averageMatchPrecision": 1,
+      "offsets": [
+        0
+      ],
+      "samples": [
+        {
+          "number": 1,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 152688,
+          "skill": 6,
+          "title": "Língua estrangeira como acesso a informação e cultura",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 153945,
+          "skill": 8,
+          "title": "Diversidade cultural em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 140709,
+          "skill": 7,
+          "title": "Relações entre textos em língua estrangeira e portuguesa",
+          "score": 1
+        },
+        {
+          "number": 4,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 154015,
+          "skill": 8,
+          "title": "Diversidade cultural em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 5,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 153833,
+          "skill": 5,
+          "title": "Vocabulário e tema em língua estrangeira",
+          "score": 1
+        },
+        {
+          "number": 1,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 153875,
+          "skill": 7,
+          "title": "Relações entre textos em língua estrangeira e portuguesa",
+          "score": 1
+        },
+        {
+          "number": 2,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 118169,
+          "skill": 7,
+          "title": "Relações entre textos em língua estrangeira e portuguesa",
+          "score": 1
+        },
+        {
+          "number": 3,
+          "sourceDiscipline": "linguagens",
+          "officialDiscipline": "linguagens",
+          "itemCode": 153836,
+          "skill": 6,
+          "title": "Língua estrangeira como acesso a informação e cultura: poesia e linguagem literária",
+          "score": 1
+        }
+      ],
+      "coverage": 0.9837837837837838,
+      "status": "safe"
+    }
+  ]
+}

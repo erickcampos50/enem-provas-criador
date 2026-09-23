@@ -68,6 +68,32 @@ baixar diretamente do Inep, mantém a leitura Latin-1.
 | 2021 | `0bf2e0bb2c4faa4fd2bb60835523864d1333e759d81d084a600c38736773bf26` |
 | 2022 | `200c8f27f4e400c8a60d3b6a0842e411de208264ba06b09fa1bfc10ace4e8693` |
 
+## ENEM 2024–2025 — tabelas completas normalizadas
+
+Arquivos: `ITENS_PROVA_2024.csv`, `ITENS_PROVA_2025.csv`.
+
+Origem semântica: tabelas `ITENS_PROVA_AAAA.csv` dos pacotes oficiais de
+Microdados do ENEM 2024 e 2025 publicados pelo Inep.
+
+- https://download.inep.gov.br/microdados/microdados_enem_2024.zip
+- https://download.inep.gov.br/microdados/microdados_enem_2025.zip
+
+Entrada nos ZIPs:
+
+- `microdados_enem_2024/DADOS/ITENS_PROVA_2024.csv`
+- `microdados_enem_2025/DADOS/ITENS_PROVA_2025.csv`
+
+Transporte: extração por range HTTP apenas da entrada CSV (o pacote integral
+não é copiado para o repositório). O CSV oficial é Latin-1 com separador ponto
+e vírgula; os snapshots foram regravados em UTF-8 com finais de linha LF.
+
+| Ano | SHA-256 normalizado |
+| ---: | --- |
+| 2024 | `c11e5e23f96dcb607a3018b7e24c48d3f14668f02b2007346ee22545c5e7b95a` |
+| 2025 | `dc23be5cccf827d9d205c4aaf81b969a1b97e468cf002e899ad2451969e7d1ee` |
+
+O pipeline detecta snapshots em `data/inep/` e os lê como UTF-8.
+
 Esses arquivos são usados primeiro para auditoria em `--dry-run`. Um ano só é
 classificado automaticamente como `safe` quando atinge a cobertura mínima
 configurada e todos os vínculos aceitos já satisfazem o limiar de precisão do

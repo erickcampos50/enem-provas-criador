@@ -1,6 +1,7 @@
 import $ from 'jquery';
 import * as bootstrap from 'bootstrap';
 import './styles.css';
+import { resolveAssetUrl } from './assets.js';
 import { DbClient } from './db-client.js';
 import { loadDatabaseBytes } from './cache.js';
 import { buildVariants } from './variants.js';
@@ -166,7 +167,7 @@ function shell() {
         <div id="app-alert" class="alert d-none" role="alert"></div>
         <details id="welcome-notice" class="welcome-notice alert ${shouldShowWelcome() ? '' : 'd-none'}">
           <summary>Como funciona esta ferramenta?</summary>
-          <div class="welcome-content small mt-2"><ul class="mb-0 ps-3"><li><strong>Finalidade:</strong> encontre questões confiáveis e crie rapidamente provas bem fundamentadas para ajudar seus alunos a se familiarizarem com o ENEM.</li><li><strong>Pesquisa:</strong> use a busca por termos no contexto, na introdução e nas alternativas; combine ano, área/idioma e presença de imagens.</li><li><strong>Trabalhos salvos:</strong> a prova é salva automaticamente neste navegador. Use o botão de salvar e compartilhar para baixar um arquivo ou gerar um link para uso futuro.</li><li><strong>Variantes:</strong> gere de 1 a 5 versões da mesma prova. As versões reorganizam as alternativas e produzem gabaritos correspondentes para dificultar cópias.</li><li><strong>Imagens:</strong> as figuras continuam referenciadas pelas URLs originais e precisam de conexão quando forem carregadas.</li></ul></div>
+          <div class="welcome-content small mt-2"><ul class="mb-0 ps-3"><li><strong>Finalidade:</strong> encontre questões confiáveis e crie rapidamente provas bem fundamentadas para ajudar seus alunos a se familiarizarem com o ENEM.</li><li><strong>Pesquisa:</strong> use a busca por termos no contexto, na introdução e nas alternativas; combine ano, área/idioma e presença de imagens.</li><li><strong>Trabalhos salvos:</strong> a prova é salva automaticamente neste navegador. Use o botão de salvar e compartilhar para baixar um arquivo ou gerar um link para uso futuro.</li><li><strong>Variantes:</strong> gere de 1 a 5 versões da mesma prova. As versões reorganizam as alternativas e produzem gabaritos correspondentes para dificultar cópias.</li><li><strong>Imagens:</strong> as figuras das questões são hospedadas junto da aplicação (esquema <code>asset:</code>) e podem ser servidas pelo GitHub Pages, por um CDN ou por um espelho configurado em <code>VITE_ASSET_BASE_URL</code>.</li></ul></div>
           <button type="button" class="btn btn-sm btn-outline-light mt-3" id="btn-dismiss-welcome">Entendi, não mostrar novamente</button>
         </details>
         <div class="row g-4">
@@ -299,8 +300,8 @@ function renderSelected() {
 }
 
 function renderQuestion(question, showAnswer = false) {
-  const files = getUniqueQuestionFiles(question).map((url, index) => `<img src="${escapeHtml(url)}" alt="Imagem de apoio ${index + 1}" class="question-image">`).join('');
-  const alternatives = (question.alternatives || []).map((alternative) => `<div class="alternative ${showAnswer && alternative.isCorrect ? 'correct' : ''}" data-correct="${alternative.isCorrect ? 'true' : 'false'}"><span class="alternative-letter">${escapeHtml(alternative.letter)})</span><div>${alternative.text ? renderMarkdown(alternative.text) : alternative.file ? `<img src="${escapeHtml(alternative.file)}" alt="Imagem da alternativa ${escapeHtml(alternative.letter)}" class="question-image">` : '<span>Sem texto ou imagem.</span>'}</div></div>`).join('');
+  const files = getUniqueQuestionFiles(question).map((url, index) => `<img src="${escapeHtml(resolveAssetUrl(url, { absolute: true }))}" alt="Imagem de apoio ${index + 1}" class="question-image">`).join('');
+  const alternatives = (question.alternatives || []).map((alternative) => `<div class="alternative ${showAnswer && alternative.isCorrect ? 'correct' : ''}" data-correct="${alternative.isCorrect ? 'true' : 'false'}"><span class="alternative-letter">${escapeHtml(alternative.letter)})</span><div>${alternative.text ? renderMarkdown(alternative.text) : alternative.file ? `<img src="${escapeHtml(resolveAssetUrl(alternative.file, { absolute: true }))}" alt="Imagem da alternativa ${escapeHtml(alternative.letter)}" class="question-image">` : '<span>Sem texto ou imagem.</span>'}</div></div>`).join('');
   const metadata = [
     question.year,
     question.discipline || 'Sem disciplina',
@@ -756,7 +757,9 @@ async function start() {
     }
   } catch (error) {
     $('#db-status').text('Não foi possível carregar a base').removeClass('bg-success').addClass('bg-danger');
-    $('#app-alert').removeClass('d-none').addClass('alert-danger').text(error.message + ' Execute npm run sync:database antes de iniciar a aplicação.');
+    $('#app-alert').removeClass('d-none').addClass('alert-danger').text(
+      `${error.message} Se o manifesto/banco estiver ausente, execute npm run sync:database e recarregue.`,
+    );
   } finally { $('#loading-overlay').remove(); }
 }
 

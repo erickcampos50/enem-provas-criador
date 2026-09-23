@@ -20,6 +20,7 @@ build/
 coverage/
 .cache/
 .parcel-cache/
+.venv-pdf/
 
 # Temporários
 *.tmp
