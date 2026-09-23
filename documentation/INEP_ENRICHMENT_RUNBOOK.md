@@ -307,6 +307,9 @@ Essa execução explícita é especialmente útil porque commits criados com o `
 
 Exemplo: incorporar ENEM 2024.
 
+> **Guia completo de um ano novo (extração de PDF + imagens + import + este enriquecimento):**  
+> [`NEW_YEAR_RUNBOOK.md`](./NEW_YEAR_RUNBOOK.md) — procedimento reproduzido em 2024–2025 e pronto para 2026.
+
 ### 12.1 Garantir que as questões estejam no banco
 
 Primeiro confirme que `enem.sqlite` contém o ano.

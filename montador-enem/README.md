@@ -51,6 +51,9 @@ npm run sync:database
 
 `extract:years` baixa `*_PV_impresso_D1_CD1` / `*_PV_impresso_D2_CD7` e gabaritos em `.cache/enem-pdf` e gera JSON+media em `.cache/enem-extract/<ano>/`. `import:years` grava só os anos pedidos e preserva enriquecimento INEP.
 
+**Procedimento passo a passo para ENEM 2026+ (PDFs, microdados, enriquecimento e deploy):**  
+[`../documentation/NEW_YEAR_RUNBOOK.md`](../documentation/NEW_YEAR_RUNBOOK.md)
+
 ## Enriquecimento com microdados do INEP
 
 O procedimento completo para auditar, aplicar e publicar o enriquecimento das questões está documentado em:
