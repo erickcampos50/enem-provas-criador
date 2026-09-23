@@ -757,7 +757,9 @@ async function start() {
     }
   } catch (error) {
     $('#db-status').text('Não foi possível carregar a base').removeClass('bg-success').addClass('bg-danger');
-    $('#app-alert').removeClass('d-none').addClass('alert-danger').text(error.message + ' Execute npm run sync:database antes de iniciar a aplicação.');
+    $('#app-alert').removeClass('d-none').addClass('alert-danger').text(
+      `${error.message} Se o manifesto/banco estiver ausente, execute npm run sync:database e recarregue.`,
+    );
   } finally { $('#loading-overlay').remove(); }
 }
 
