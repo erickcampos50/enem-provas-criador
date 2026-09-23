@@ -24,6 +24,33 @@ npm run build:database -- --delay-ms 500 --verbose
 
 O coletor gera um arquivo temporário e só substitui `../enem.sqlite` depois de validar o conteúdo e o `integrity_check`.
 
+## Imagens locais (esquema `asset:`)
+
+As figuras ficam em `public/media/<ano>/questions/...` e são referenciadas no SQLite como `asset:media/...`. A resolução é multi-host (`src/assets.js`):
+
+1. `VITE_ASSET_BASE_URL` (CDN/espelho), se definido;
+2. `BASE_URL` do Vite (ex. `/enem-provas-criador/` no GitHub Pages);
+3. fallback `https://erickcampos50.github.io/enem-provas-criador/`.
+
+Para republicar as imagens 2009–2023 a partir de `yunger7/enem-api`:
+
+```bash
+npm run localize:images -- --source /caminho/do/enem-api/public --verbose
+```
+
+## Anos novos via PDF oficial (2024+)
+
+A API enem.dev só cobre 2009–2023. Para anos posteriores, extraia dos PDFs Azul do INEP e importe incrementalmente (sem rebuild):
+
+```bash
+npm run extract:years -- --years 2024,2025
+npm run import:years -- --years 2024,2025
+npm test
+npm run sync:database
+```
+
+`extract:years` baixa `*_PV_impresso_D1_CD1` / `*_PV_impresso_D2_CD7` e gabaritos em `.cache/enem-pdf` e gera JSON+media em `.cache/enem-extract/<ano>/`. `import:years` grava só os anos pedidos e preserva enriquecimento INEP.
+
 ## Enriquecimento com microdados do INEP
 
 O procedimento completo para auditar, aplicar e publicar o enriquecimento das questões está documentado em:
