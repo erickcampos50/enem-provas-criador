@@ -89,10 +89,9 @@ e vírgula; os snapshots foram regravados em UTF-8 com finais de linha LF.
 
 | Ano | SHA-256 normalizado |
 | ---: | --- |
-| 2024 | `c11e5e23f96dcb60`… (completo em `sha256sum data/inep/ITENS_PROVA_2024.csv`) |
-| 2025 | `dc23be5cccf827d9`… (completo em `sha256sum data/inep/ITENS_PROVA_2025.csv`) |
+| 2024 | `c11e5e23f96dcb607a3018b7e24c48d3f14668f02b2007346ee22545c5e7b95a` |
+| 2025 | `dc23be5cccf827d9d205c4aaf81b969a1b97e468cf002e899ad2451969e7d1ee` |
 
-Os hashes completos são os de `sha256sum data/inep/ITENS_PROVA_{2024,2025}.csv`.
 O pipeline detecta snapshots em `data/inep/` e os lê como UTF-8.
 
 Esses arquivos são usados primeiro para auditoria em `--dry-run`. Um ano só é
