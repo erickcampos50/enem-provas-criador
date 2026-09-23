@@ -3,7 +3,7 @@ feature: enem-2024-2025-extraction
 status: delivered
 updated: 2026-09-23
 branch: feat/enem-2024-2025-extraction
-commits: 
+commits: 5d29955..5699ae2
 ---
 
 # ENEM 2024–2025 + imagens locais 2009–2023
