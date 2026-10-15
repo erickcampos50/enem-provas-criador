@@ -6,6 +6,7 @@ import { DbClient } from './db-client.js';
 import { loadDatabaseBytes } from './cache.js';
 import { buildVariants } from './variants.js';
 import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
+import { exportVariantsDocx } from './docx.js';
 import { renderMarkdown } from './markdown.js';
 import { clearDraft, dismissWelcome, downloadText, encodeProofLink, exportProof, parseProof, parseProofLink, readDraft, shouldShowWelcome, writeDraft } from './storage.js';
 
@@ -213,7 +214,7 @@ function shell() {
                 })()}
                 <div class="col-12"><label class="form-label" for="header-instructions">Instruções para os alunos</label><textarea class="form-control form-control-sm" rows="2" id="header-instructions" data-header="instructions" placeholder="Ex.: Leia com atenção, assinale apenas uma alternativa por questão e use caneta azul ou preta."></textarea></div>
               </div></div></div>
-              <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar a prova e exportar</h2><p class="small text-secondary mb-3">Escolha quantas versões você precisa e entenda o que cada material entrega antes de baixar.</p><div class="row g-3 mb-3"><div class="col-12"><label class="form-label" for="variants-count">Quantidade de variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><div id="variants-help" class="form-text">Uma variante é uma versão da mesma prova com outra ordem de alternativas. A Variante A preserva a ordem original; as seguintes deslocam a resposta correta e geram um gabarito próprio.</div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar alternativas incorretas</label><div id="shuffle-help" class="form-text ms-4">Também reorganiza, de forma determinística, as alternativas erradas. Desmarcado, elas mantêm a ordem original e apenas a posição da correta muda.</div></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label><div id="answer-sheet-help" class="form-text ms-4">Acrescenta uma folha compacta para o aluno preencher, com identificação da variante e espaço para entregar junto com a prova.</div></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar prova em PDF</strong><small>Versão do aluno · pronta para imprimir</small></span></button><p class="pdf-action-help">O navegador abrirá a visualização de impressão para você salvar a prova em PDF. O gabarito não aparece nesta versão.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">Baixar gabarito do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar versão ZIP</button></div></div></div>
+              <div class="card builder-card"><div class="card-body"><h2 class="h5">Gerar a prova e exportar</h2><p class="small text-secondary mb-3">Escolha quantas versões você precisa e entenda o que cada material entrega antes de baixar.</p><div class="row g-3 mb-3"><div class="col-12"><label class="form-label" for="variants-count">Quantidade de variantes</label><select class="form-select form-select-sm" id="variants-count"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select><div id="variants-help" class="form-text">Uma variante é uma versão da mesma prova com outra ordem de alternativas. A Variante A preserva a ordem original; as seguintes deslocam a resposta correta e geram um gabarito próprio.</div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="shuffle-incorrect"><label class="form-check-label small" for="shuffle-incorrect">Embaralhar alternativas incorretas</label><div id="shuffle-help" class="form-text ms-4">Também reorganiza, de forma determinística, as alternativas erradas. Desmarcado, elas mantêm a ordem original e apenas a posição da correta muda.</div></div></div><div class="col-12"><div class="form-check"><input class="form-check-input" type="checkbox" id="include-answer-sheet" checked><label class="form-check-label small" for="include-answer-sheet">Incluir folha de respostas na versão do aluno</label><div id="answer-sheet-help" class="form-text ms-4">Acrescenta uma folha compacta para o aluno preencher, com identificação da variante e espaço para entregar junto com a prova.</div></div></div></div><div class="pdf-primary-action"><button class="btn btn-primary btn-lg" id="btn-print-student"><span class="pdf-action-icon">PDF</span><span><strong>Baixar prova em PDF</strong><small>Versão do aluno · pronta para imprimir</small></span></button><p class="pdf-action-help">O navegador abrirá a visualização de impressão para você salvar a prova em PDF. O gabarito não aparece nesta versão.</p></div><div class="d-flex flex-wrap gap-2"><button class="btn btn-outline-primary btn-sm" id="btn-print-teacher">Baixar gabarito do professor</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-zip">Baixar versão ZIP</button><button class="btn btn-outline-secondary btn-sm" id="btn-export-docx">Baixar versão DOCX</button></div></div></div>
             </div>
           </aside>
         </div>
@@ -488,7 +489,11 @@ async function openSharedProof() {
 }
 
 function currentVariants() {
-  const questions = state.selected.map((item) => ({ ...(state.questionCache.get(item.id) || {}), points: item.points }));
+  const questions = state.selected.map((item) => {
+    const question = state.questionCache.get(item.id);
+    if (!question) throw new Error('Uma questão ainda não foi carregada. Aguarde e tente novamente.');
+    return { ...question, points: item.points };
+  });
   if (!questions.length) throw new Error('Adicione pelo menos uma questão à prova.');
   return buildVariants(questions, state.variantsCount, state.shuffleIncorrect);
 }
@@ -554,22 +559,27 @@ function fillHeader() {
   $('#variants-count').val(state.variantsCount); $('#shuffle-incorrect').prop('checked', state.shuffleIncorrect); $('#include-answer-sheet').prop('checked', state.includeAnswerSheet);
 }
 
-function waitForPrintImages(printWindow) {
+async function waitForPrintImages(printWindow) {
   const images = [...printWindow.document.images];
-  return Promise.all(images.map((image) => new Promise((resolve) => {
+  await Promise.all(images.map((image) => new Promise((resolve) => {
     if (image.complete) {
       resolve();
       return;
     }
+    let timeout;
     const finish = () => {
+      clearTimeout(timeout);
       image.removeEventListener('load', finish);
       image.removeEventListener('error', finish);
       resolve();
     };
     image.addEventListener('load', finish, { once: true });
     image.addEventListener('error', finish, { once: true });
-    setTimeout(finish, 5000);
+    timeout = setTimeout(finish, 15000);
   })));
+  if (images.some(image => !image.complete || !image.naturalWidth)) {
+    throw new Error('Uma imagem da prova não carregou. Confira sua conexão e tente gerar o PDF novamente.');
+  }
 }
 
 function printWithFrame(html) {
@@ -592,7 +602,13 @@ function printWithFrame(html) {
       cleaned = true;
       frame.remove();
     };
-    await waitForPrintImages(frameWindow);
+    try {
+      await waitForPrintImages(frameWindow);
+    } catch (error) {
+      cleanup();
+      showToast(error.message, 'danger');
+      return;
+    }
     frameWindow.addEventListener('afterprint', cleanup, { once: true });
     frameWindow.focus();
     frameWindow.print();
@@ -619,9 +635,14 @@ function openPrint(teacher, variantIndex = 0) {
     popup.document.close();
     popup.focus();
     const printPopup = async () => {
-      await waitForPrintImages(popup);
-      popup.focus();
-      popup.print();
+      try {
+        await waitForPrintImages(popup);
+        popup.focus();
+        popup.print();
+      } catch (error) {
+        popup.close();
+        showToast(error.message, 'danger');
+      }
     };
     if (popup.document.readyState === 'complete') setTimeout(() => { void printPopup(); }, 50);
     else popup.addEventListener('load', () => { void printPopup(); }, { once: true });
@@ -672,6 +693,20 @@ function bindEvents() {
   $('#preview-student').on('click', () => { state.previewTeacher = false; renderPreview(); });
   $('#preview-teacher').on('click', () => { state.previewTeacher = true; renderPreview(); });
   $('#btn-export-zip').on('click', async () => { try { await exportVariants(state.header, currentVariants(), { includeAnswerSheet: state.includeAnswerSheet, zip: true }); showToast('Versão ZIP da prova gerada.', 'success'); } catch (error) { showToast(error.message, 'danger'); } });
+  $('#btn-export-docx').on('click', async () => {
+    const button = $('#btn-export-docx');
+    if (button.prop('disabled')) return;
+    button.prop('disabled', true).text('Preparando DOCX…');
+    try {
+      // Snapshot: edições durante o carregamento das imagens não alteram o arquivo.
+      await exportVariantsDocx(structuredClone(state.header), structuredClone(currentVariants()), { includeAnswerSheet: state.includeAnswerSheet });
+      showToast('Arquivo ZIP com as provas DOCX do aluno e do professor gerado.', 'success');
+    } catch (error) {
+      showToast(error.message, 'danger');
+    } finally {
+      button.prop('disabled', false).text('Baixar versão DOCX');
+    }
+  });
   $('#btn-print-student').on('click', () => openPrint(false, state.previewVariant)); $('#btn-print-teacher').on('click', () => openPrint(true, state.previewVariant));
   $('#btn-preview-pdf').on('click', () => openPrint(state.previewTeacher, state.previewVariant));
   $('#btn-save-share').on('click', openStorageModal);
