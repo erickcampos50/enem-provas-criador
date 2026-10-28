@@ -69,7 +69,16 @@ function envBase() {
 
 function documentBase() {
   if (typeof document !== 'undefined' && document.baseURI) {
-    return document.baseURI;
+    try {
+      // A URL de filtros (e o hash de prova) não faz parte do caminho dos
+      // assets: sem isso, o query string entraria no meio da URL da imagem.
+      const url = new URL(document.baseURI, globalThis.location?.href);
+      url.search = '';
+      url.hash = '';
+      return url.href;
+    } catch {
+      return String(document.baseURI).split(/[?#]/)[0];
+    }
   }
   return '';
 }

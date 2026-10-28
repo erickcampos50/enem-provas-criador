@@ -45,6 +45,27 @@ test('assetCandidates exposes fallback hosts', () => {
   assert.equal(candidates[0], 'https://a.example/media/2023/questions/1/a.png');
 });
 
+test('bases ignoram query e hash da URL da página', () => {
+  const original = globalThis.document;
+  globalThis.document = { baseURI: 'https://example.test/app/?q=abc&ano=2025#prova=xyz' };
+  try {
+    assert.equal(
+      resolveAssetUrl('asset:media/2024/questions/149/img-0.png', { absolute: true }),
+      'https://example.test/app/media/2024/questions/149/img-0.png',
+    );
+    assert.deepEqual(
+      assetCandidates('asset:media/2024/questions/149/img-0.png').slice(0, 2),
+      [
+        'https://example.test/app/media/2024/questions/149/img-0.png',
+        'https://erickcampos50.github.io/enem-provas-criador/media/2024/questions/149/img-0.png',
+      ],
+    );
+  } finally {
+    if (original === undefined) delete globalThis.document;
+    else globalThis.document = original;
+  }
+});
+
 test('mediaAssetKey builds canonical keys', () => {
   assert.equal(
     mediaAssetKey(2024, '12-ingles', 'img-0.png'),
