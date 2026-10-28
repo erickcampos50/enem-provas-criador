@@ -62,6 +62,24 @@ O procedimento completo para auditar, aplicar e publicar o enriquecimento das qu
 
 O guia cobre execução local e via GitHub Actions, inclusão de novos anos, critérios de segurança, relatórios, `TP_LINGUA`, encoding, deploy e rollback.
 
+## Dificuldade das questões (TRI)
+
+A dificuldade exibida na biblioteca e no modal é derivada do parâmetro `b` da TRI (modelo 3PL) publicado pelo Inep em `ITENS_PROVA` e já gravado em `question_inep_metadata.tri_b`. Não é necessário baixar os microdados completos de respostas: os snapshots atuais cobrem 3.002 das 3.127 questões.
+
+As faixas ficam em `src/difficulty.js` e usam os percentis da base 2009–2025:
+
+| Faixa | `b` |
+| --- | --- |
+| Muito fácil | < 0,5 |
+| Fácil | 0,5 – 1,2 |
+| Médio | 1,2 – 1,9 |
+| Difícil | 1,9 – 2,5 |
+| Muito difícil | ≥ 2,5 |
+
+Um item fica **Sem classificação** quando não há metadado INEP, quando `b` está ausente, quando `a < 0,5` (discriminação baixa torna `b` não identificável) ou quando `b > 5` (outlier de calibração). Hoje são 125 questões nessa condição.
+
+O filtro **Dificuldade** consulta `tri_a`/`tri_b` no worker e combina com os demais filtros. Na lista, cada questão recebe um contorno colorido em escala verde→vermelho e uma tag com o grau; no modal aparece apenas a tag. O valor numérico de `b` não é exibido nas tags — fica disponível no tooltip.
+
 ## Testes
 
 ```bash
