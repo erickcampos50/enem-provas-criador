@@ -16,6 +16,22 @@ npm run dev
 
 O navegador carrega o SQLite WASM em um Web Worker. O texto das questões funciona localmente depois do carregamento; as imagens continuam usando as URLs remotas gravadas no banco.
 
+## Filtros na URL
+
+A busca e os filtros aplicados ficam gravados na URL, então recarregar a página ou compartilhar o endereço restaura a mesma visualização. Os parâmetros usados são:
+
+| Parâmetro | Conteúdo |
+| --- | --- |
+| `q` | termos da busca |
+| `ano` | ano da prova |
+| `area` | área/disciplina ou `lang:<idioma>` |
+| `dificuldade` | faixa de dificuldade (`facil`, `medio`, `dificil`, etc.) |
+| `imagens` | `1` para somente questões com imagens |
+| `ocultar` | `1` para ocultar questões já selecionadas |
+| `pagina` | página de resultados (omitida na primeira) |
+
+O botão **Limpar buscas** remove os parâmetros. O navegador também restaura o estado ao usar os botões voltar/avançar, e links de prova (`#prova=...`) preservam os filtros da URL.
+
 ## Atualização do banco
 
 ```bash

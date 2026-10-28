@@ -14,15 +14,17 @@ import {
   classifyDifficulty,
   difficultyBadgeLabel,
   formatDifficultyB,
+  isDifficultyKey,
 } from './difficulty.js';
 import { clearDraft, dismissWelcome, downloadText, encodeProofLink, exportProof, parseProof, parseProofLink, readDraft, shouldShowWelcome, writeDraft } from './storage.js';
+import { buildFilterUrl, filtersFromSearchParams } from './url-state.js';
 
 window.$ = $;
 window.bootstrap = bootstrap;
 
 const db = new DbClient();
 const state = {
-  filters: { q: '', year: '', discipline: '', language: '', difficulty: '', hasImages: false },
+  filters: { q: '', year: '', discipline: '', language: '', difficulty: '', hasImages: false, hideSelected: false },
   results: [],
   totalResults: 0,
   page: 1,
@@ -49,6 +51,7 @@ let draggedId = null;
 let searchRequestId = 0;
 let modalQuestionId = null;
 let modalShowAnswer = false;
+let urlSyncReady = false;
 
 function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
@@ -271,6 +274,47 @@ function renderFilters() {
   $('#filter-difficulty').html(selectOptions(difficultyOptions, state.filters.difficulty, 'Todas as dificuldades'));
 }
 
+function sanitizeFilters(filters) {
+  const availableYears = new Set((state.filtersData.years || []).map((item) => String(item.value ?? item)));
+  const disciplines = new Set((state.filtersData.disciplines || []).map((item) => String(item.value ?? item)));
+  const languages = new Set((state.filtersData.languages || []).map((item) => String(item.value ?? item)));
+  const year = filters.year && availableYears.has(String(filters.year)) ? String(filters.year) : '';
+  const language = filters.language && languages.has(String(filters.language)) ? String(filters.language) : '';
+  const discipline = !language && filters.discipline && disciplines.has(String(filters.discipline))
+    ? String(filters.discipline)
+    : '';
+  return {
+    q: String(filters.q ?? '').trim(),
+    year,
+    discipline,
+    language,
+    difficulty: isDifficultyKey(filters.difficulty) ? filters.difficulty : '',
+    hasImages: Boolean(filters.hasImages),
+    hideSelected: Boolean(filters.hideSelected),
+  };
+}
+
+function readFiltersFromUrl() {
+  const parsed = filtersFromSearchParams(window.location.search);
+  return { filters: sanitizeFilters(parsed.filters), page: parsed.page };
+}
+
+function applyFiltersToForm() {
+  $('#search-query').val(state.filters.q);
+  $('#filter-year').val(state.filters.year);
+  $('#filter-discipline').val(state.filters.language ? `lang:${state.filters.language}` : state.filters.discipline);
+  $('#filter-difficulty').val(state.filters.difficulty);
+  $('#filter-images').prop('checked', Boolean(state.filters.hasImages));
+  $('#filter-hide-selected').prop('checked', Boolean(state.filters.hideSelected));
+}
+
+function syncFiltersToUrl(page, mode = 'push') {
+  const url = buildFilterUrl(window.location.href, state.filters, page);
+  if (url === window.location.href) return;
+  const method = mode === 'replace' ? 'replaceState' : 'pushState';
+  window.history[method]({ filters: true, page }, '', url);
+}
+
 function flashSelectedQuestion(id) {
   const card = document.querySelector('.question-result[data-question-id="' + id + '"]');
   if (!card) return;
@@ -426,7 +470,7 @@ function setSearchBusy(busy) {
   $('#search-form button[type="submit"]').prop('disabled', busy).attr('aria-busy', busy ? 'true' : 'false');
 }
 
-async function performSearch(page = 1, { notify = false } = {}) {
+async function performSearch(page = 1, { notify = false, updateUrl = 'push' } = {}) {
   const requestId = ++searchRequestId;
   const previousPage = state.page;
   state.page = page;
@@ -440,14 +484,16 @@ async function performSearch(page = 1, { notify = false } = {}) {
     state.filters.discipline = combined || '';
     state.filters.language = '';
   }
-  state.filters.hasImages = $('#filter-images').prop('checked') ? true : undefined;
+  state.filters.hasImages = $('#filter-images').prop('checked') ? true : false;
   state.filters.difficulty = $('#filter-difficulty').val() || '';
-  const hideSelected = $('#filter-hide-selected').prop('checked');
+  state.filters.hideSelected = $('#filter-hide-selected').prop('checked');
+  const { hideSelected, ...searchFilters } = state.filters;
   setSearchBusy(true);
   try {
-    const response = await db.searchQuestions({ ...state.filters, excludeIds: hideSelected ? state.selected.map((item) => item.id) : [], page, pageSize: state.pageSize });
+    const response = await db.searchQuestions({ ...searchFilters, excludeIds: hideSelected ? state.selected.map((item) => item.id) : [], page, pageSize: state.pageSize });
     if (requestId !== searchRequestId) return;
     state.results = response.results; state.totalResults = response.total; response.results.forEach((item) => state.questionCache.set(item.id, { ...state.questionCache.get(item.id), ...item })); renderResults();
+    if (updateUrl === 'push' || updateUrl === 'replace') syncFiltersToUrl(page, updateUrl);
     if (notify) showToast(response.total ? 'Busca concluída: ' + formatCount(response.total) + ' questões encontradas.' : 'Nenhuma questão encontrada com esses critérios.', response.total ? 'success' : 'info');
   } catch (error) {
     if (requestId !== searchRequestId) return;
@@ -691,7 +737,7 @@ function bindEvents() {
   const selectedHelpIcon = document.getElementById('selected-help-icon');
   if (selectedHelpIcon) bootstrap.Popover.getOrCreateInstance(selectedHelpIcon, { trigger: 'hover focus', html: true, sanitize: false });
   $('#search-form').on('submit', (event) => { event.preventDefault(); void performSearch(1, { notify: true }); });
-  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline,#filter-difficulty').val(''); if ($('#filter-language').length) $('#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); state.filters.discipline = ''; state.filters.language = ''; state.filters.difficulty = ''; void performSearch(1, { notify: true }); });
+  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline,#filter-difficulty').val(''); if ($('#filter-language').length) $('#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); state.filters.discipline = ''; state.filters.language = ''; state.filters.difficulty = ''; state.filters.hideSelected = false; void performSearch(1, { notify: true }); });
   $('#search-results').on('change', '.question-select', (event) => { void setSelected(Number(event.currentTarget.dataset.questionId), event.currentTarget.checked).catch((error) => showToast(error.message, 'danger')); });
   $('#search-results').on('click', '[data-preview-id]', (event) => { event.preventDefault(); void showPreview(Number(event.currentTarget.dataset.previewId)); });
   $('#btn-select-visible').on('click', async () => {
@@ -794,6 +840,13 @@ function bindEvents() {
     $('#question-modal .alternative[data-correct="true"]').removeClass('correct');
     updateModalFooterState();
   });
+  window.addEventListener('popstate', () => {
+    if (!urlSyncReady) return;
+    const restored = readFiltersFromUrl();
+    state.filters = restored.filters;
+    applyFiltersToForm();
+    void performSearch(restored.page, { updateUrl: 'none' });
+  });
 }
 
 async function start() {
@@ -802,7 +855,11 @@ async function start() {
     const loaded = await loadDatabaseBytes();
     const initialized = await db.init(loaded.bytes);
     state.database = { sha256: loaded.manifest.sha256, questionCount: initialized.questionCount, examCount: initialized.examCount };
-    state.filtersData = await db.getFilters(); renderFilters();
+    state.filtersData = await db.getFilters();
+    const restoredFilters = readFiltersFromUrl();
+    state.filters = restoredFilters.filters;
+    renderFilters();
+    applyFiltersToForm();
     $('#db-status').text(formatCount(initialized.questionCount) + ' questões · ' + formatCount(initialized.examCount) + ' provas').attr('title', 'Base local carregada').removeClass('bg-danger').addClass('bg-success');
     const draft = readDraft();
     if (draft) {
@@ -811,7 +868,8 @@ async function start() {
       await restoreProof(draft);
       showToast('Rascunho restaurado automaticamente.', 'info');
     }
-    await performSearch(1);
+    await performSearch(restoredFilters.page, { updateUrl: 'replace' });
+    urlSyncReady = true;
     renderPreview();
     try {
       const sharedProof = parseProofLink(window.location.hash);
