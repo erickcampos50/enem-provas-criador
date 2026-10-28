@@ -33,6 +33,9 @@ SECTION_46_90 = re.compile(r"Quest[oõ]es de 46 a 90", re.IGNORECASE)
 SECTION_91_135 = re.compile(r"Quest[oõ]es de 91 a 135", re.IGNORECASE)
 SECTION_136_180 = re.compile(r"Quest[oõ]es de 136 a 180", re.IGNORECASE)
 SECTION_GENERIC = re.compile(r"Texto para as Quest[oõ]es de (\d+) a (\d+)", re.IGNORECASE)
+NON_QUESTION_PAGE = re.compile(
+    r"PROPOSTA DE REDA[ÇC][ÃA]O|FOLHA DE RESPOSTAS", re.IGNORECASE
+)
 
 ALT_RE = re.compile(r"^([A-E])\s+(.*\S)\s*$")
 NOISE_RE = re.compile(
@@ -267,67 +270,168 @@ def build_question_payload(block: dict, gabarito: dict, media_keys: list[str]) -
     }
 
 
-def _bbox_range_overlap(a0: float, a1: float, b0: float, b1: float) -> float:
-    return max(0.0, min(a1, b1) - max(a0, b0))
+def is_question_image(page, info: dict) -> bool:
+    bbox = info.get("bbox") or (0, 0, 0, 0)
+    x0, y0, x1, y1 = bbox
+    width = float(x1 - x0)
+    height = float(y1 - y0)
+    if width < 30 or height < 30:
+        return False
+    # Skip full-page decorative backgrounds / watermarks
+    if width > page.rect.width * 0.95 and height > page.rect.height * 0.5:
+        return False
+    return bool(info.get("xref"))
 
 
-def extract_images_for_pages(
-    doc,
-    page_numbers: list[int],
+def collect_question_images(doc1, doc2) -> dict[tuple[int, str | None], list[dict]]:
+    """Assign every printed image to the question block that owns it.
+
+    The booklet flows down the left column and then down the right column, so
+    an image belongs to the last question heading before it in that reading
+    order. Cover, essay ("proposta de redação") and answer-sheet pages carry
+    no question images and are skipped.
+    """
+    events: list[dict] = []
+    for doc_tag, doc in (("d1", doc1), ("d2", doc2)):
+        for page_no in range(doc.page_count):
+            if page_no == 0:
+                continue
+            page = doc[page_no]
+            if NON_QUESTION_PAGE.search(page.get_text("text")):
+                continue
+            mid = page.rect.width / 2.0
+            for block in page.get_text("blocks"):
+                x0, y0, x1, y1, text, *_ = block
+                for line in text.splitlines():
+                    clean = clean_line(line)
+                    if not clean:
+                        continue
+                    kind = None
+                    number = None
+                    if SECTION_EN.search(clean):
+                        kind = "ingles"
+                    elif SECTION_ES.search(clean):
+                        kind = "espanhol"
+                    elif (
+                        SECTION_06_45.search(clean)
+                        or SECTION_46_90.search(clean)
+                        or SECTION_91_135.search(clean)
+                        or SECTION_136_180.search(clean)
+                        or SECTION_GENERIC.search(clean)
+                    ):
+                        kind = "none"
+                    else:
+                        match = QUESTION_RE.match(clean)
+                        if match:
+                            kind = "question"
+                            number = int(match.group(1))
+                    if kind is None:
+                        continue
+                    events.append(
+                        dict(
+                            kind=kind,
+                            number=number,
+                            doc=doc_tag,
+                            page=page_no,
+                            col=0 if x0 < mid else 1,
+                            y=y0,
+                        )
+                    )
+            for image_index, info in enumerate(page.get_image_info(xrefs=True)):
+                if not is_question_image(page, info):
+                    continue
+                bbox = info["bbox"]
+                events.append(
+                    dict(
+                        kind="image",
+                        doc=doc_tag,
+                        page=page_no,
+                        col=0 if bbox[0] < mid else 1,
+                        y=(bbox[1] + bbox[3]) / 2.0,
+                        image=dict(
+                            doc=doc_tag,
+                            page=page_no,
+                            index=image_index,
+                            xref=info["xref"],
+                        ),
+                    )
+                )
+
+    events.sort(
+        key=lambda event: (
+            0 if event["doc"] == "d1" else 1,
+            event["page"],
+            event["col"],
+            event["y"],
+            1 if event["kind"] == "image" else 0,
+        )
+    )
+
+    images: dict[tuple[int, str | None], list[dict]] = {}
+    language: str | None = None
+    owner: tuple[int, str | None] | None = None
+    for event in events:
+        if event["kind"] in ("ingles", "espanhol"):
+            language = event["kind"]
+        elif event["kind"] == "none":
+            language = None
+        elif event["kind"] == "question":
+            number = event["number"]
+            if number > 5:
+                language = None
+            owner = (number, language)
+        elif owner is not None:
+            images.setdefault(owner, []).append(event["image"])
+    return images
+
+
+def read_image_bytes(doc, xref: int) -> tuple[bytes, str]:
+    extracted = doc.extract_image(xref)
+    if not extracted or not extracted.get("image"):
+        return b"", ""
+    ext = (extracted.get("ext") or "png").lower()
+    if ext == "jpeg":
+        ext = "jpg"
+    # Browsers do not decode JPEG 2000; convert those images to PNG.
+    if ext in {"jpx", "jp2", "j2k"}:
+        pix = pymupdf.Pixmap(doc, xref)
+        if pix.alpha:
+            pix = pymupdf.Pixmap(pix, 0)
+        if pix.n < 3:
+            pix = pymupdf.Pixmap(pymupdf.csRGB, pix)
+        return pix.tobytes("png"), "png"
+    return extracted["image"], ext
+
+
+def extract_question_images(
+    doc1,
+    doc2,
+    refs: list[dict],
     dest_dir: Path,
     year: int,
-    index: int,
+    number: int,
     language: str | None,
-    y_ranges: list[tuple[float, float]] | None = None,
 ) -> list[str]:
-    """Extract images, optionally only those whose y-range overlaps question text."""
-    dest_dir.mkdir(parents=True, exist_ok=True)
+    """Extract the given image references into the question's media folder."""
+    folder = f"{number}" if not language else f"{number}-{language}"
     keys: list[str] = []
-    folder = f"{index}" if not language else f"{index}-{language}"
-    for page_no in page_numbers:
-        page = doc[page_no]
-        image_infos = page.get_image_info(xrefs=True)
-        for image_index, info in enumerate(image_infos):
-            bbox = info.get("bbox") or (0, 0, 0, 0)
-            x0, y0, x1, y1 = bbox
-            width = float(x1 - x0)
-            height = float(y1 - y0)
-            if width < 30 or height < 30:
-                continue
-            # Skip full-page decorative backgrounds / watermarks
-            page_rect = page.rect
-            if width > page_rect.width * 0.95 and height > page_rect.height * 0.5:
-                continue
-            if y_ranges:
-                img_mid = (y0 + y1) / 2.0
-                if not any(low - 80 <= img_mid <= high + 80 for low, high in y_ranges):
-                    continue
-            xref = info.get("xref") or 0
-            if not xref:
-                continue
-            try:
-                extracted = doc.extract_image(xref)
-            except Exception:
-                continue
-            if not extracted or not extracted.get("image"):
-                continue
-            ext = (extracted.get("ext") or "png").lower()
-            if ext == "jpeg":
-                ext = "jpg"
-            image_bytes = extracted["image"]
-            name = f"img-{page_no + 1}-{image_index}.{ext}"
-            rel = f"{year}/questions/{folder}/{name}"
-            out = dest_dir / rel
-            out.parent.mkdir(parents=True, exist_ok=True)
-            out.write_bytes(image_bytes)
-            keys.append(f"asset:media/{rel}")
-    seen: set[str] = set()
-    unique: list[str] = []
-    for key in keys:
-        if key not in seen:
-            seen.add(key)
-            unique.append(key)
-    return unique
+    for ref in refs:
+        doc = doc1 if ref["doc"] == "d1" else doc2
+        try:
+            image_bytes, ext = read_image_bytes(doc, ref["xref"])
+        except Exception:
+            continue
+        if not image_bytes:
+            continue
+        name = f"img-{ref['page'] + 1}-{ref['index']}.{ext}"
+        rel = f"{year}/questions/{folder}/{name}"
+        out = dest_dir / rel
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(image_bytes)
+        key = f"asset:media/{rel}"
+        if key not in keys:
+            keys.append(key)
+    return keys
 
 
 def main() -> int:
@@ -341,8 +445,7 @@ def main() -> int:
     args = parser.parse_args()
 
     args.out.mkdir(parents=True, exist_ok=True)
-    media_root = args.out  # media files land at <out>/media/... via rel path year/questions/...
-    # Actually dest uses rel year/questions — put under out/media
+    # Images keep their asset path: <out>/<year>/questions/<n>/img-*.
     media_root = args.out
 
     gabarito = parse_gabarito(args.gabarito1)
@@ -353,47 +456,20 @@ def main() -> int:
     pages = split_pages(doc1) + split_pages(doc2)
     blocks = parse_questions_from_pages(pages, args.year)
 
-    # Attach page numbers by scanning again (global index across D1+D2).
-    page_blocks: list[tuple[int, str | None, int]] = []
-    current_language = None
-    for global_page, page_text in enumerate(pages):
-        for line in page_text.splitlines():
-            clean = clean_line(line)
-            if SECTION_EN.search(clean):
-                current_language = "ingles"
-            elif SECTION_ES.search(clean):
-                current_language = "espanhol"
-            elif (
-                SECTION_06_45.search(clean)
-                or SECTION_46_90.search(clean)
-                or SECTION_91_135.search(clean)
-                or SECTION_136_180.search(clean)
-            ):
-                current_language = None
-            m = QUESTION_RE.match(clean)
-            if m:
-                number = int(m.group(1))
-                if number > 5:
-                    current_language = None
-                page_blocks.append((number, current_language, global_page))
-
-    pages_for: dict[tuple[int, str | None], list[int]] = {}
-    for number, language, page_no in page_blocks:
-        pages_for.setdefault((number, language), []).append(page_no)
+    question_images = collect_question_images(doc1, doc2)
 
     questions = []
     exam_questions = []
     for block in blocks:
         key = (block["index"], block["language"])
-        page_list = sorted(set(pages_for.get(key, [])))
-        media_keys: list[str] = []
-        d1_pages = [p for p in page_list if p < doc1.page_count]
-        d2_pages = [p - doc1.page_count for p in page_list if p >= doc1.page_count]
-        media_keys += extract_images_for_pages(
-            doc1, d1_pages, media_root, args.year, block["index"], block["language"]
-        )
-        media_keys += extract_images_for_pages(
-            doc2, d2_pages, media_root, args.year, block["index"], block["language"]
+        media_keys = extract_question_images(
+            doc1,
+            doc2,
+            question_images.get(key, []),
+            media_root,
+            args.year,
+            block["index"],
+            block["language"],
         )
 
         payload = build_question_payload(block, gabarito, media_keys)

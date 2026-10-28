@@ -21,7 +21,10 @@ coverage/
 .cache/
 .parcel-cache/
 .venv-pdf/
+__pycache__/
+*.pyc
 
 # Temporários
 *.tmp
 *.temp
+.playwright-mcp/
