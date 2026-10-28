@@ -92,8 +92,335 @@ def parse_gabarito(path: Path) -> dict[int, dict[str, str | None]]:
     return result
 
 
+TABLE_LINE_PREFIX = "\x01"
+TABLE_NEWLINE = "\x02"
+
+# Markdown tables are kept as one placeholder line until the question block is
+# assembled, so blank lines around the table are restored exactly once.
+CELL_NUMBER_RE = re.compile(
+    r"^[+\-−–]?\s*[\d.,/\s]*\d[\d.,/\s%°ªº]*$|^[+\-−–]?\s*R\$\s*[\d.,\s]+$"
+)
+
+
+def _page_lines(page) -> list[dict]:
+    """Return text lines with boxes, in the same order as page.get_text("text").
+
+    Splitting by lines (instead of blocks) keeps the extractor's reading order
+    stable while providing the geometry needed to replace tables in place.
+    """
+    lines: list[dict] = []
+    for block in page.get_text("dict")["blocks"]:
+        if block.get("type") != 0:
+            continue
+        for line in block["lines"]:
+            text = "".join(span["text"] for span in line["spans"])
+            if not text.strip():
+                continue
+            lines.append({"bbox": tuple(line["bbox"]), "text": text})
+    return lines
+
+
+def _center_inside(bbox, region, margin: float = 1.0) -> bool:
+    x0, y0, x1, y1 = bbox
+    rx0, ry0, rx1, ry1 = region
+    cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+    return rx0 - margin <= cx <= rx1 + margin and ry0 - margin <= cy <= ry1 + margin
+
+
+def _boxes_overlap(first, second, margin: float = 2.0) -> bool:
+    return not (
+        first[2] < second[0] - margin
+        or first[0] > second[2] + margin
+        or first[3] < second[1] - margin
+        or first[1] > second[3] + margin
+    )
+
+
+def _drawing_segments(page) -> tuple[list[tuple], list[tuple]]:
+    """Collect horizontal (y, x0, x1) and vertical (x, y0, y1) rule segments."""
+    horizontals: list[tuple] = []
+    verticals: list[tuple] = []
+    for drawing in page.get_drawings():
+        for item in drawing["items"]:
+            if item[0] == "l":
+                pairs = [(item[1], item[2])]
+            elif item[0] == "re":
+                rect = item[1]
+                pairs = [
+                    ((rect.x0, rect.y0), (rect.x1, rect.y0)),
+                    ((rect.x0, rect.y1), (rect.x1, rect.y1)),
+                    ((rect.x0, rect.y0), (rect.x0, rect.y1)),
+                    ((rect.x1, rect.y0), (rect.x1, rect.y1)),
+                ]
+            else:
+                continue
+            for first, second in pairs:
+                x0, y0 = (first.x, first.y) if hasattr(first, "x") else first
+                x1, y1 = (second.x, second.y) if hasattr(second, "x") else second
+                if abs(y0 - y1) < 0.6 and abs(x0 - x1) >= 1:
+                    horizontals.append((y0, min(x0, x1), max(x0, x1)))
+                elif abs(x0 - x1) < 0.6 and abs(y0 - y1) >= 1:
+                    verticals.append((x0, min(y0, y1), max(y0, y1)))
+    return horizontals, verticals
+
+
+def _cluster(values: list[float], tolerance: float = 2.0) -> list[float]:
+    groups: list[list[float]] = []
+    for value in sorted(values):
+        if groups and value - groups[-1][-1] <= tolerance:
+            groups[-1].append(value)
+        else:
+            groups.append([value])
+    return [sum(group) / len(group) for group in groups]
+
+
+def _merge_adjacent(segments: list[tuple], tolerance: float = 1.5, gap: float = 2.5) -> list[tuple]:
+    """Join collinear segments that touch, without bridging distant columns."""
+    merged: list[tuple] = []
+    for segment in sorted(segments, key=lambda item: (item[0], item[1])):
+        if merged:
+            coord, low, high = merged[-1]
+            if abs(segment[0] - coord) <= tolerance and segment[1] <= high + gap and segment[2] >= low - gap:
+                merged[-1] = (coord, min(low, segment[1]), max(high, segment[2]))
+                continue
+        merged.append(segment)
+    return merged
+
+
+def table_to_markdown(page, bbox) -> tuple[str, tuple[float, float, float, float]] | None:
+    """Rebuild a ruled table as GFM using the PDF's own cell rectangles.
+
+    PyMuPDF's `Table.extract()` drops the original spacing ("11-12" becomes
+    "1112"), so cells are read from their geometric boxes instead. Returns the
+    markdown and the effective box (which may be wider than `find_tables()`).
+    """
+    x0, y0, x1, y1 = bbox
+    horizontals, verticals = _drawing_segments(page)
+
+    # find_tables() clips tables that lack a closing border (e.g. ENEM 2024
+    # Q177); grow the box through any adjacent rule that belongs to it.
+    for _ in range(3):
+        changed = False
+        for y, start, end in horizontals:
+            if y0 - 2 <= y <= y1 + 2 and start <= x1 + 2 and end >= x0 - 2:
+                nx0, nx1 = min(x0, start), max(x1, end)
+                if (nx0, nx1) != (x0, x1):
+                    x0, x1 = nx0, nx1
+                    changed = True
+        for x, start, end in verticals:
+            if x0 - 2 <= x <= x1 + 2 and start <= y1 + 2 and end >= y0 - 2:
+                ny0, ny1 = min(y0, start), max(y1, end)
+                if (ny0, ny1) != (y0, y1):
+                    y0, y1 = ny0, ny1
+                    changed = True
+        if not changed:
+            break
+
+    width, height = x1 - x0, y1 - y0
+    rules_h = _merge_adjacent([item for item in horizontals if y0 - 1.5 <= item[0] <= y1 + 1.5])
+    rules_v = _merge_adjacent([item for item in verticals if x0 - 1.5 <= item[0] <= x1 + 1.5])
+    rules_h = [
+        item for item in rules_h
+        if item[1] >= x0 - 2 and item[2] <= x1 + 2 and item[2] - item[1] >= width * 0.6
+    ]
+    rules_v = [
+        item for item in rules_v
+        if item[1] >= y0 - 2 and item[2] <= y1 + 2 and item[2] - item[1] >= height * 0.4
+    ]
+
+    ys = _cluster([item[0] for item in rules_h])
+    xs = _cluster(
+        [item[0] for item in rules_v]
+        + [item[1] for item in rules_h]
+        + [item[2] for item in rules_h]
+    )
+    xs = [value for value in xs if x0 - 2 <= value <= x1 + 2]
+    if len(ys) < 2 or len(xs) < 2:
+        return None
+
+    rows, cols = len(ys) - 1, len(xs) - 1
+
+    def has_vertical(x: float, top: float, bottom: float) -> bool:
+        middle = (top + bottom) / 2.0
+        return any(abs(rule_x - x) <= 2 and low - 2 <= middle <= high + 2 for rule_x, low, high in rules_v)
+
+    def has_horizontal(y: float, left: float, right: float) -> bool:
+        middle = (left + right) / 2.0
+        return any(abs(rule_y - y) <= 2 and low - 2 <= middle <= high + 2 for rule_y, low, high in rules_h)
+
+    # Merge grid cells whose shared border is absent (spanned headers/labels).
+    parent = list(range(rows * cols))
+
+    def find(cell: int) -> int:
+        while parent[cell] != cell:
+            parent[cell] = parent[parent[cell]]
+            cell = parent[cell]
+        return cell
+
+    def union(first: int, second: int) -> None:
+        root_a, root_b = find(first), find(second)
+        if root_a != root_b:
+            parent[root_b] = root_a
+
+    for row in range(rows):
+        for col in range(cols):
+            cell = row * cols + col
+            if col + 1 < cols and not has_vertical(xs[col + 1], ys[row], ys[row + 1]):
+                union(cell, cell + 1)
+            if row + 1 < rows and not has_horizontal(ys[row + 1], xs[col], xs[col + 1]):
+                union(cell, cell + cols)
+
+    groups: dict[int, list[tuple[int, int]]] = {}
+    for row in range(rows):
+        for col in range(cols):
+            groups.setdefault(find(row * cols + col), []).append((row, col))
+
+    cells = [["" for _ in range(cols)] for _ in range(rows)]
+    for members in groups.values():
+        top = min(row for row, _ in members)
+        bottom = max(row for row, _ in members)
+        left = min(col for _, col in members)
+        right = max(col for _, col in members)
+        rect = pymupdf.Rect(xs[left] + 1, ys[top] + 1, xs[right + 1] - 1, ys[bottom + 1] - 1)
+        if not rect.is_valid or rect.width <= 0 or rect.height <= 0:
+            continue
+        text = re.sub(r"\s+", " ", page.get_textbox(rect)).strip()
+        cells[top][left] = text
+
+    if not any(any(row) for row in cells):
+        return None
+
+    def escape(value: str) -> str:
+        return value.replace("\\", "\\\\").replace("|", "\\|")
+
+    aligns = ["---"] * cols
+    for col in range(cols):
+        values = [row[col] for row in cells[1:] if row[col]]
+        if values and all(CELL_NUMBER_RE.match(value) for value in values):
+            aligns[col] = "---:"
+
+    output = [
+        "| " + " | ".join(escape(value) for value in cells[0]) + " |",
+        "| " + " | ".join(aligns) + " |",
+    ]
+    output.extend(
+        "| " + " | ".join(escape(value) for value in row) + " |" for row in cells[1:]
+    )
+    return "\n".join(output), (x0, y0, x1, y1)
+
+
+def _filled_cell_bands(page) -> list[tuple[float, float, float, float]]:
+    """Find rows of adjacent filled cells (tables drawn without rules).
+
+    ENEM 2024 Q169 prints the Caesar-cipher alphabets as 26 green boxes with no
+    borders, which `find_tables()` cannot see.
+    """
+    rects = []
+    for drawing in page.get_drawings():
+        if not drawing.get("fill"):
+            continue
+        for item in drawing["items"]:
+            if item[0] != "re":
+                continue
+            rect = item[1]
+            if 5 <= rect.width <= 35 and 5 <= rect.height <= 35:
+                rects.append(rect)
+    bands: list[list] = []
+    for rect in rects:
+        for band in bands:
+            first = band[0]
+            if abs(first.y0 - rect.y0) <= 1.5 and abs(first.y1 - rect.y1) <= 1.5:
+                band.append(rect)
+                break
+        else:
+            bands.append([rect])
+
+    result = []
+    for band in bands:
+        spans = sorted((rect.x0, rect.x1) for rect in band)
+        runs: list[list[tuple[float, float]]] = [[spans[0]]]
+        for span in spans[1:]:
+            if span[0] - runs[-1][-1][1] <= 1.5:
+                runs[-1].append(span)
+            else:
+                runs.append([span])
+        for run in runs:
+            if len(run) >= 6 and run[-1][1] - run[0][0] >= 100:
+                result.append(
+                    (
+                        run[0][0],
+                        min(rect.y0 for rect in band),
+                        run[-1][1],
+                        max(rect.y1 for rect in band),
+                    )
+                )
+    return result
+
+
+def build_page_text(page) -> str:
+    """Read a page as text, replacing detected tables with GFM tables."""
+    lines = _page_lines(page)
+    if not lines:
+        return ""
+
+    replacements: list[list[str] | None] = [None] * len(lines)
+    has_question = any(QUESTION_RE.match(clean_line(line["text"])) for line in lines)
+    table_boxes: list[tuple] = []
+
+    if has_question:
+        try:
+            tables = page.find_tables().tables
+        except Exception:  # pragma: no cover - defensive against PDF quirks
+            tables = []
+        for table in tables:
+            rendered = table_to_markdown(page, table.bbox)
+            if not rendered:
+                continue
+            markdown, table_box = rendered
+            indexes = [
+                index
+                for index, line in enumerate(lines)
+                if _center_inside(line["bbox"], table_box)
+            ]
+            if not indexes:
+                continue
+            replacements[indexes[0]] = [TABLE_LINE_PREFIX + markdown.replace("\n", TABLE_NEWLINE)]
+            for index in indexes[1:]:
+                replacements[index] = []
+            table_boxes.append(table_box)
+
+        for band in _filled_cell_bands(page):
+            if any(_boxes_overlap(band, box) for box in table_boxes):
+                continue
+            left, top, right, bottom = band
+            members = []
+            for index, line in enumerate(lines):
+                x0, y0, x1, y1 = line["bbox"]
+                center_y = (y0 + y1) / 2.0
+                if top - 2 <= center_y <= bottom + 2 and x0 >= left - 6 and x0 <= right + 250:
+                    members.append(index)
+            if len(members) < 2:
+                continue
+            joined = " ".join(
+                clean_line(lines[index]["text"])
+                for index in sorted(members, key=lambda item: lines[item]["bbox"][0])
+            )
+            replacements[members[0]] = [joined]
+            for index in members[1:]:
+                replacements[index] = []
+
+    output: list[str] = []
+    for index, line in enumerate(lines):
+        replacement = replacements[index]
+        if replacement is None:
+            output.append(line["text"])
+        else:
+            output.extend(replacement)
+    return "\n".join(output)
+
+
 def split_pages(doc) -> list[str]:
-    return [page.get_text("text") for page in doc]
+    return [build_page_text(page) for page in doc]
 
 
 def split_stem_and_alternatives(body_lines: list[str]) -> tuple[list[str], dict[str, str]]:
@@ -204,8 +531,19 @@ def parse_questions_from_pages(pages: list[str], year: int) -> list[dict]:
                     if SECTION_91_135.search(next_line) or SECTION_136_180.search(next_line):
                         break
                     if next_line and not NOISE_RE.match(next_line):
-                        body_lines.append(next_line)
+                        if next_line.startswith(TABLE_LINE_PREFIX):
+                            table = next_line[len(TABLE_LINE_PREFIX):].replace(TABLE_NEWLINE, "\n")
+                            body_lines.append("")
+                            body_lines.extend(table.splitlines())
+                            body_lines.append("")
+                        else:
+                            body_lines.append(next_line)
                     i += 1
+
+                while body_lines and not body_lines[0]:
+                    body_lines.pop(0)
+                while body_lines and not body_lines[-1]:
+                    body_lines.pop()
 
                 stem_lines, alternatives = split_stem_and_alternatives(body_lines)
 
@@ -234,6 +572,9 @@ def split_context_and_intro(stem_lines: list[str]) -> tuple[str | None, str | No
         return None, stem_lines[0]
     # Heuristic: citation-ish tail ("Disponível em", "KEYS,", "adaptado") stays in context.
     intro = stem_lines[-1]
+    # A table row must never be peeled off as the prompt.
+    if intro.startswith("|"):
+        return "\n".join(stem_lines), None
     # If last line is a short question/prompt, peel it.
     if len(intro) < 400 and not re.search(r"Disponível em|Acesso em|adaptado\.?$", intro, re.I):
         context = "\n".join(stem_lines[:-1])

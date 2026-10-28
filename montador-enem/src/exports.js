@@ -80,6 +80,11 @@ body { margin: 0; background: #f2f2f2; color: #222; font: 10.5pt/1.48 Arial, Hel
 .answer-key-total { display: flex; justify-content: flex-end; gap: 8mm; margin-top: 5mm; padding: 4mm 5mm; border: 1px solid #555; background: #f5f5f5; color: #222; font-weight: 800; }
 table { width: 100%; table-layout: fixed; font-size: 9pt; }
 thead { display: table-header-group; }
+.question-context table, .alternatives-introduction table, .alternative table { margin: 2mm 0 3mm; border-collapse: collapse; table-layout: auto; font-size: 8.5pt; }
+.question-context th, .question-context td, .alternatives-introduction th, .alternatives-introduction td, .alternative th, .alternative td { padding: 1mm 1.5mm; border: .3mm solid #777; text-align: left; vertical-align: top; overflow-wrap: anywhere; }
+.question-context th[align="right"], .question-context td[align="right"], .alternatives-introduction th[align="right"], .alternatives-introduction td[align="right"], .alternative th[align="right"], .alternative td[align="right"] { text-align: right; }
+.question-context th, .alternatives-introduction th, .alternative th { background: #ececec; font-weight: 700; }
+.question-context tr, .alternatives-introduction tr, .alternative tr { break-inside: avoid; }
 .answer-sheet-table th, .answer-sheet-table td { padding: 1.7mm 1.5mm; }
 @media print { body { background: #fff; } .exam-page { max-width: none; } .exam-header { box-shadow: none; } }
 @media screen { body { padding: 12mm 0; } .exam-page { padding: 12mm 15mm; box-shadow: 0 3px 20px rgba(0, 0, 0, .12); } }
