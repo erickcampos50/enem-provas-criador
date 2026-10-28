@@ -53,10 +53,13 @@ npm run sync:database
 
 As figuras são associadas à questão dona do bloco pela ordem de leitura do caderno (coluna esquerda e depois direita), ignorando capa, proposta de redação e folha de respostas. Imagens JPEG 2000 (`jpx`) são convertidas para PNG porque os navegadores não as decodificam.
 
-Se um ano já importado precisar ter as associações de imagem recalculadas (sem alterar IDs de questão nem enriquecimento INEP):
+No texto, uma linha só é tratada como alternativa A quando B, C, D e E aparecem em seguida. Isso evita que enunciados iniciados por “A ...” (por exemplo, “A cúpula pentagonal...”) sejam confundidos com a alternativa A e desapareçam do contexto.
+
+Se um ano já importado precisar ter as associações de imagem ou os textos recalculados (sem alterar IDs de questão nem enriquecimento INEP):
 
 ```bash
 npm run repair:images -- --years 2024,2025 --extract-root ../.cache/enem-extract --prune-media
+npm run repair:text -- --years 2024,2025 --extract-root ../.cache/enem-extract
 ```
 
 **Procedimento passo a passo para ENEM 2026+ (PDFs, microdados, enriquecimento e deploy):**  

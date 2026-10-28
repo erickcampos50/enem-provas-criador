@@ -17,6 +17,7 @@
     "extract:years": "node scripts/extract-enem-years.mjs",
     "import:years": "node scripts/import-extracted-years.mjs",
     "repair:images": "node scripts/repair-question-images.mjs",
+    "repair:text": "node scripts/repair-question-text.mjs",
     "enrich:inep": "node scripts/enrich-inep.mjs",
     "enrich:inep:2023": "node scripts/enrich-inep.mjs --years 2023 --verbose",
     "test": "node --test tests/*.test.mjs",

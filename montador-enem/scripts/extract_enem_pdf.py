@@ -37,7 +37,7 @@ NON_QUESTION_PAGE = re.compile(
     r"PROPOSTA DE REDA[ÇC][ÃA]O|FOLHA DE RESPOSTAS", re.IGNORECASE
 )
 
-ALT_RE = re.compile(r"^([A-E])\s+(.*\S)\s*$")
+ALT_RE = re.compile(r"^([A-E])(?:\s+(.*\S))?\s*$")
 NOISE_RE = re.compile(
     r"^(ENEM20\d{2}|[*]\d{4,}[A-Z0-9]*[*]?|RASCUNHO|DA REDAÇÃO|"
     r"Transcreva a sua Redação|LEIA ATENTAMENTE|CADERNO|Gabarito)",
@@ -94,6 +94,51 @@ def parse_gabarito(path: Path) -> dict[int, dict[str, str | None]]:
 
 def split_pages(doc) -> list[str]:
     return [page.get_text("text") for page in doc]
+
+
+def split_stem_and_alternatives(body_lines: list[str]) -> tuple[list[str], dict[str, str]]:
+    """Separate the question stem from its A-E alternatives.
+
+    A stem line may start with "A " (e.g. "A cúpula pentagonal..."), so a
+    letter-prefixed line is only accepted as option A when B, C, D and E
+    follow it in order. Without that sequence, fall back to the first
+    letter-prefixed line to preserve the previous behavior for visual
+    alternatives.
+    """
+    run_start: int | None = None
+    expected: str | None = None
+    for index, line in enumerate(body_lines):
+        match = ALT_RE.match(line)
+        if not match:
+            continue
+        letter = match.group(1)
+        if letter == "A":
+            run_start = index
+            expected = "B"
+        elif run_start is not None and letter == expected:
+            if expected == "E":
+                break
+            expected = "BCDE"["BCDE".index(expected) + 1]
+    else:
+        run_start = None
+
+    if run_start is None:
+        run_start = next(
+            (index for index, line in enumerate(body_lines) if ALT_RE.match(line)),
+            len(body_lines),
+        )
+
+    stem_lines = body_lines[:run_start]
+    alternatives: dict[str, str] = {}
+    current_alt: str | None = None
+    for line in body_lines[run_start:]:
+        match = ALT_RE.match(line)
+        if match:
+            current_alt = match.group(1)
+            alternatives[current_alt] = (match.group(2) or "").strip()
+        elif current_alt:
+            alternatives[current_alt] = f"{alternatives[current_alt]} {line}".strip()
+    return stem_lines, alternatives
 
 
 def parse_questions_from_pages(pages: list[str], year: int) -> list[dict]:
@@ -162,33 +207,7 @@ def parse_questions_from_pages(pages: list[str], year: int) -> list[dict]:
                         body_lines.append(next_line)
                     i += 1
 
-                stem_lines: list[str] = []
-                alternatives: dict[str, str] = {}
-                current_alt: str | None = None
-                for body in body_lines:
-                    alt_match = ALT_RE.match(body)
-                    # Alternative letters are alone on a line in these PDFs sometimes:
-                    # "A\tdar oportunidade..." already joined as "A dar..."
-                    if alt_match and alt_match.group(1) in "ABCDE":
-                        # Heuristic: alternatives start after we have some stem,
-                        # or letter is at start and looks like option text.
-                        letter = alt_match.group(1)
-                        text = alt_match.group(2)
-                        if current_alt is None and not stem_lines and len(text) < 3:
-                            stem_lines.append(body)
-                            continue
-                        current_alt = letter
-                        alternatives[letter] = text
-                        continue
-                    # Standalone letter line (layout variant)
-                    if re.fullmatch(r"[A-E]", body) and stem_lines:
-                        current_alt = body
-                        alternatives.setdefault(body, "")
-                        continue
-                    if current_alt:
-                        alternatives[current_alt] = f"{alternatives[current_alt]} {body}".strip()
-                    else:
-                        stem_lines.append(body)
+                stem_lines, alternatives = split_stem_and_alternatives(body_lines)
 
                 blocks.append(
                     {
