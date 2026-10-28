@@ -1,5 +1,14 @@
 /* global self */
 
+import {
+  DIFFICULTY_BANDS,
+  MAX_RELIABLE_B,
+  MIN_DISCRIMINATION,
+  UNCLASSIFIED_DIFFICULTY,
+  classifyDifficulty,
+  isDifficultyKey,
+} from './difficulty.js';
+
 const MAX_QUERY_LENGTH = 2_048;
 const MAX_EXCLUDED_IDS = 1_000;
 const MAX_PAGE_SIZE = 100;
@@ -63,6 +72,15 @@ function optionalInepSelectSql() {
           im.tri_b AS inep_tri_b,
           im.tri_c AS inep_tri_c,
           im.match_score AS inep_match_score`;
+}
+
+function optionalDifficultySelectSql(alias = 'im') {
+  if (!databaseFeatures.inepMetadata) {
+    return `NULL AS inep_tri_a,
+              NULL AS inep_tri_b`;
+  }
+  return `${alias}.tri_a AS inep_tri_a,
+              ${alias}.tri_b AS inep_tri_b`;
 }
 
 function optionalEnrichmentSelectSql() {
@@ -481,6 +499,15 @@ function parseSearchOptions(payload) {
   const year = parseInteger(input.year, 'year');
   const discipline = parseOptionalString(input.discipline, 'discipline');
   const language = parseOptionalString(input.language, 'language');
+  const difficulty = parseOptionalString(input.difficulty, 'difficulty');
+  if (difficulty !== undefined && !isDifficultyKey(difficulty)) {
+    throw createError(
+      'InvalidArgumentError',
+      'difficulty deve ser uma faixa de dificuldade conhecida.',
+      'INVALID_ARGUMENT',
+      { field: 'difficulty' },
+    );
+  }
   const page = parseInteger(input.page, 'page', { min: 1 }) ?? 1;
   const pageSize = parseInteger(input.pageSize, 'pageSize', { min: 1, max: MAX_PAGE_SIZE }) ?? 20;
 
@@ -527,6 +554,7 @@ function parseSearchOptions(payload) {
     year,
     discipline,
     language,
+    difficulty,
     hasImages: input.hasImages,
     excludeIds: normalizedExcludeIds,
     limit: pageSize,
@@ -566,6 +594,35 @@ function buildSearchQuery(options) {
     conditions.push('q.language = $language');
     bind.$language = options.language;
   }
+  if (options.difficulty !== undefined) {
+    if (!databaseFeatures.inepMetadata) {
+      conditions.push('0');
+    } else {
+      const reliable = `(im.tri_b IS NOT NULL
+            AND im.tri_b <= ${MAX_RELIABLE_B}
+            AND im.tri_a IS NOT NULL
+            AND im.tri_a >= ${MIN_DISCRIMINATION})`;
+      if (options.difficulty === UNCLASSIFIED_DIFFICULTY.key) {
+        conditions.push(`NOT ${reliable}`);
+      } else {
+        const band = DIFFICULTY_BANDS.find((item) => item.key === options.difficulty);
+        if (!band) {
+          conditions.push('0');
+        } else {
+          const bandConditions = [reliable];
+          if (band.min !== null) {
+            bandConditions.push('im.tri_b >= $difficultyMin');
+            bind.$difficultyMin = band.min;
+          }
+          if (band.max !== null) {
+            bandConditions.push('im.tri_b < $difficultyMax');
+            bind.$difficultyMax = band.max;
+          }
+          conditions.push(`(${bandConditions.join('\n            AND ')})`);
+        }
+      }
+    }
+  }
   if (options.hasImages === true) {
     conditions.push(
       `(EXISTS (SELECT 1 FROM question_files AS image_filter WHERE image_filter.question_id = q.id)
@@ -598,6 +655,10 @@ function mapSearchResult(row) {
     sourceTitle: row.source_title ?? row.title,
     discipline: row.discipline ?? null,
     hasImages: Boolean(Number(asNumber(row.has_images))),
+    difficulty: classifyDifficulty({
+      a: row.inep_tri_a == null ? null : Number(asNumber(row.inep_tri_a)),
+      b: row.inep_tri_b == null ? null : Number(asNumber(row.inep_tri_b)),
+    }),
     snippet: row.snippet ?? null,
   };
 }
@@ -651,7 +712,8 @@ function searchQuestions(payload) {
               q.title AS source_title,
               ${effectiveDisciplineSql('q')} AS discipline,
               q.context,
-              q.alternatives_introduction
+              q.alternatives_introduction,
+              ${optionalDifficultySelectSql('im')}
          FROM questions AS q
          ${optionalQuestionJoins('q')}
          ${query.join}
@@ -666,6 +728,8 @@ function searchQuestions(payload) {
            paged.title,
            paged.source_title,
            paged.discipline,
+           paged.inep_tri_a,
+           paged.inep_tri_b,
            ${snippetSelect}
            EXISTS (
              SELECT 1

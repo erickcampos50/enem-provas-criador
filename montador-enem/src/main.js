@@ -8,6 +8,13 @@ import { buildVariants } from './variants.js';
 import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
 import { exportVariantsDocx } from './docx.js';
 import { renderMarkdown } from './markdown.js';
+import {
+  DIFFICULTY_BANDS,
+  UNCLASSIFIED_DIFFICULTY,
+  classifyDifficulty,
+  difficultyBadgeLabel,
+  formatDifficultyB,
+} from './difficulty.js';
 import { clearDraft, dismissWelcome, downloadText, encodeProofLink, exportProof, parseProof, parseProofLink, readDraft, shouldShowWelcome, writeDraft } from './storage.js';
 
 window.$ = $;
@@ -15,7 +22,7 @@ window.bootstrap = bootstrap;
 
 const db = new DbClient();
 const state = {
-  filters: { q: '', year: '', discipline: '', language: '', hasImages: false },
+  filters: { q: '', year: '', discipline: '', language: '', difficulty: '', hasImages: false },
   results: [],
   totalResults: 0,
   page: 1,
@@ -177,8 +184,9 @@ function shell() {
               <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between gap-3 mb-3"><div><h2 class="h5 mb-1">Biblioteca de questões</h2><p class="text-secondary small mb-0">Pesquise pelo contexto, introdução ou alternativas.</p></div><button class="btn btn-sm btn-outline-secondary" id="btn-clear-search">Limpar buscas</button></div>
                 <form id="search-form" class="row g-2 mb-3">
-                  <div class="col-md-7"><label class="form-label d-inline-flex align-items-center gap-1" for="search-query">Pesquise pelos termos que desejar <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-grid place-items-center p-0" id="search-help-icon" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="right" data-bs-html="true" title="Dica de pesquisa" data-bs-content="Digite vários termos separados por espaço. Todos devem aparecer (E). Use <code>OR</code> para alternar e <code>&quot;frase exata&quot;</code> para buscar a sequência literal." aria-label="Ajuda sobre sintaxe de pesquisa" style="width:1.05rem;height:1.05rem;font-size:.62rem;line-height:1;">?</button></label><input class="form-control" id="search-query" placeholder="Ex.: fotossíntese urbanização — use espaço para combinar (E), OR para OU, &quot;aspas&quot; para frase exata"></div>
-                  <div class="col-md-5"><label class="form-label" for="filter-year">Ano</label><select class="form-select" id="filter-year"></select></div>
+                  <div class="col-md-6"><label class="form-label d-inline-flex align-items-center gap-1" for="search-query">Pesquise pelos termos que desejar <button type="button" class="btn btn-sm btn-outline-secondary rounded-circle d-inline-grid place-items-center p-0" id="search-help-icon" data-bs-toggle="popover" data-bs-trigger="focus" data-bs-placement="right" data-bs-html="true" title="Dica de pesquisa" data-bs-content="Digite vários termos separados por espaço. Todos devem aparecer (E). Use <code>OR</code> para alternar e <code>&quot;frase exata&quot;</code> para buscar a sequência literal." aria-label="Ajuda sobre sintaxe de pesquisa" style="width:1.05rem;height:1.05rem;font-size:.62rem;line-height:1;">?</button></label><input class="form-control" id="search-query" placeholder="Ex.: fotossíntese urbanização — use espaço para combinar (E), OR para OU, &quot;aspas&quot; para frase exata"></div>
+                  <div class="col-md-3"><label class="form-label" for="filter-year">Ano</label><select class="form-select" id="filter-year"></select></div>
+                  <div class="col-md-3"><label class="form-label" for="filter-difficulty">Dificuldade</label><select class="form-select" id="filter-difficulty"></select></div>
                   <div class="col-md-8"><label class="form-label" for="filter-discipline">Área / disciplina / idioma</label><select class="form-select" id="filter-discipline"></select></div>
                   <div class="col-md-4 d-none" aria-hidden="true"><label class="form-label" for="filter-language">Idioma</label><select class="form-select d-none" id="filter-language" tabindex="-1" aria-hidden="true"></select></div>
                   <div class="col-md-4 d-flex align-items-end"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="filter-images"><label class="form-check-label" for="filter-images">Somente questões com imagens</label></div></div>
@@ -256,6 +264,11 @@ function renderFilters() {
   const languageOptions = (state.filtersData.languages || []).map((item) => ({ value: `lang:${item.value ?? item}`, label: `${item.label ?? item} (Idioma)` }));
   const combined = [...disciplineOptions, ...languageOptions];
   $('#filter-discipline').html(selectOptions(combined, currentCombined, 'Todas as áreas / idiomas'));
+  const difficultyOptions = [
+    ...DIFFICULTY_BANDS.map((band) => ({ value: band.key, label: band.label })),
+    { value: UNCLASSIFIED_DIFFICULTY.key, label: `${UNCLASSIFIED_DIFFICULTY.label} (sem TRI confiável)` },
+  ];
+  $('#filter-difficulty').html(selectOptions(difficultyOptions, state.filters.difficulty, 'Todas as dificuldades'));
 }
 
 function flashSelectedQuestion(id) {
@@ -265,6 +278,18 @@ function flashSelectedQuestion(id) {
   void card.offsetWidth;
   card.classList.add('just-selected');
   setTimeout(() => card.classList.remove('just-selected'), 900);
+}
+
+function difficultyBadgeTitle(difficulty) {
+  if (!difficulty) {
+    return 'Sem parâmetro de dificuldade TRI confiável: item sem b, com discriminação baixa ou fora da faixa calibrada.';
+  }
+  return `Dificuldade TRI oficial (b = ${formatDifficultyB(difficulty.b)}), faixa calculada a partir dos parâmetros do Inep.`;
+}
+
+function renderDifficultyBadge(difficulty) {
+  const key = difficulty?.key ?? UNCLASSIFIED_DIFFICULTY.key;
+  return `<span class="difficulty-badge" data-difficulty="${escapeHtml(key)}" title="${escapeHtml(difficultyBadgeTitle(difficulty))}">${escapeHtml(difficultyBadgeLabel(difficulty))}</span>`;
 }
 
 function renderResults() {
@@ -278,7 +303,7 @@ function renderResults() {
       const languageLabel = result.language ? ((state.filtersData.languages.find((l) => String(l.value ?? l) === String(result.language))?.label) || result.language) : '';
       const areaInfo = languageLabel ? `${disciplineLabel} · ${languageLabel}` : disciplineLabel;
       const areaWithImage = result.hasImages ? `${areaInfo} · 🖼️ imagens` : areaInfo;
-      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatQuestionHeading(result))} · ${escapeHtml(areaWithImage)}</button></div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
+      return `<article class="question-result card card-body p-3 ${selectedIds.has(result.id) ? 'selected' : ''}" data-question-id="${result.id}" data-difficulty="${escapeHtml(result.difficulty?.key ?? UNCLASSIFIED_DIFFICULTY.key)}" style="--difficulty-color:${escapeHtml(result.difficulty?.color ?? UNCLASSIFIED_DIFFICULTY.color)}"><div class="d-flex gap-2 align-items-start"><input class="form-check-input mt-1 question-select" type="checkbox" data-question-id="${result.id}" ${selectedIds.has(result.id) ? 'checked' : ''}><div class="flex-grow-1"><div><button class="btn btn-link p-0 text-start text-decoration-none result-title" data-preview-id="${result.id}">${escapeHtml(formatQuestionHeading(result))} · ${escapeHtml(areaWithImage)}</button> ${renderDifficultyBadge(result.difficulty)}</div><div class="result-snippet mt-1">${escapeHtml(normalizeSnippet(result.snippet) || 'Sem trecho textual disponível.')}</div></div></div></article>`;
     }).join(''));
   }
   const pages = Math.ceil(state.totalResults / state.pageSize);
@@ -303,6 +328,10 @@ function renderSelected() {
 function renderQuestion(question, showAnswer = false) {
   const files = getUniqueQuestionFiles(question).map((url, index) => `<img src="${escapeHtml(resolveAssetUrl(url, { absolute: true }))}" alt="Imagem de apoio ${index + 1}" class="question-image">`).join('');
   const alternatives = (question.alternatives || []).map((alternative) => `<div class="alternative ${showAnswer && alternative.isCorrect ? 'correct' : ''}" data-correct="${alternative.isCorrect ? 'true' : 'false'}"><span class="alternative-letter">${escapeHtml(alternative.letter)})</span><div>${alternative.text ? renderMarkdown(alternative.text) : alternative.file ? `<img src="${escapeHtml(resolveAssetUrl(alternative.file, { absolute: true }))}" alt="Imagem da alternativa ${escapeHtml(alternative.letter)}" class="question-image">` : '<span>Sem texto ou imagem.</span>'}</div></div>`).join('');
+  const difficulty = classifyDifficulty({
+    a: question.inep?.tri?.a ?? null,
+    b: question.inep?.tri?.b ?? null,
+  });
   const metadata = [
     question.year,
     question.discipline || 'Sem disciplina',
@@ -315,7 +344,7 @@ function renderQuestion(question, showAnswer = false) {
   const provenance = question.sourceTitle && question.sourceTitle !== question.title
     ? `<div class="small text-secondary mt-1">Título da fonte: ${escapeHtml(question.sourceTitle)}</div>`
     : '';
-  return `<div><h3 class="h5">${escapeHtml(formatQuestionHeading(question))}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3">${metadata}</div>${provenance}</div>`;
+  return `<div class="question-content" data-difficulty="${escapeHtml(difficulty?.key ?? UNCLASSIFIED_DIFFICULTY.key)}" style="--difficulty-color:${escapeHtml(difficulty?.color ?? UNCLASSIFIED_DIFFICULTY.color)}"><h3 class="h5">${escapeHtml(formatQuestionHeading(question))}</h3><div>${renderMarkdown(question.context)}</div>${files}<div>${renderMarkdown(question.alternativesIntroduction)}</div>${alternatives}<div class="small text-secondary mt-3 d-flex flex-wrap align-items-center gap-2"><span>${metadata}</span>${renderDifficultyBadge(difficulty)}</div>${provenance}</div>`;
 }
 
 function updateModalFooterState() {
@@ -412,6 +441,7 @@ async function performSearch(page = 1, { notify = false } = {}) {
     state.filters.language = '';
   }
   state.filters.hasImages = $('#filter-images').prop('checked') ? true : undefined;
+  state.filters.difficulty = $('#filter-difficulty').val() || '';
   const hideSelected = $('#filter-hide-selected').prop('checked');
   setSearchBusy(true);
   try {
@@ -661,7 +691,7 @@ function bindEvents() {
   const selectedHelpIcon = document.getElementById('selected-help-icon');
   if (selectedHelpIcon) bootstrap.Popover.getOrCreateInstance(selectedHelpIcon, { trigger: 'hover focus', html: true, sanitize: false });
   $('#search-form').on('submit', (event) => { event.preventDefault(); void performSearch(1, { notify: true }); });
-  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline').val(''); if ($('#filter-language').length) $('#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); state.filters.discipline = ''; state.filters.language = ''; void performSearch(1, { notify: true }); });
+  $('#btn-clear-search').on('click', () => { $('#search-query').val(''); $('#filter-year,#filter-discipline,#filter-difficulty').val(''); if ($('#filter-language').length) $('#filter-language').val(''); $('#filter-images,#filter-hide-selected').prop('checked', false); state.filters.discipline = ''; state.filters.language = ''; state.filters.difficulty = ''; void performSearch(1, { notify: true }); });
   $('#search-results').on('change', '.question-select', (event) => { void setSelected(Number(event.currentTarget.dataset.questionId), event.currentTarget.checked).catch((error) => showToast(error.message, 'danger')); });
   $('#search-results').on('click', '[data-preview-id]', (event) => { event.preventDefault(); void showPreview(Number(event.currentTarget.dataset.previewId)); });
   $('#btn-select-visible').on('click', async () => {

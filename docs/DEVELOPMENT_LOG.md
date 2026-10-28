@@ -317,3 +317,17 @@ Para concluir a validação sem instalar runtime no sistema, foi usado temporari
 - Renomeado o botão para Baixar versão ZIP e atualizado o feedback após a geração.
 
 **Validação:** npm test, build com VITE_BASE_PATH=/enem-provas-criador/ e smoke test Chromium aprovados.
+
+
+## 28/10/2026 — Dificuldade das questões pela TRI do Inep
+
+**Entregas:**
+
+- Nova classificação derivada do parâmetro `b` da TRI (3PL) já presente em `question_inep_metadata`: muito fácil (< 0,5), fácil (0,5–1,2), médio (1,2–1,9), difícil (1,9–2,5) e muito difícil (≥ 2,5). As faixas ficam em `montador-enem/src/difficulty.js` e os cortes usam os percentis da base 2009–2025.
+- Itens sem `b`, com discriminação `a < 0,5` ou com `b > 5` não recebem faixa e aparecem como Sem classificação. Isso evita classificar parâmetros não identificáveis, como o item de 2015 com `b = 61,05` e `a = 0,02`.
+- O filtro Dificuldade na biblioteca consulta `im.tri_a`/`im.tri_b` no worker e combina com ano, área, idioma e presença de imagens.
+- A lista exibe contorno colorido em escala verde→vermelho e uma tag com o grau; o modal exibe apenas a tag, sem contorno. As cores têm contraste mínimo de 4,8:1 sobre texto branco e o grau não depende apenas da cor.
+- O valor numérico de `b` não aparece nas tags; permanece apenas no `title` (tooltip) como explicação opcional.
+- Sem migração de banco: a classificação é derivada em tempo de leitura.
+
+**Validação:** `npm test` (58 aprovados), build Vite e verificação no navegador dos seis filtros, da combinação com ano, do modal e da limpeza de busca. Contadores conferidos contra consultas SQL no `enem.sqlite`: 3.002 classificadas (579 muito fácil, 896 fácil, 812 médio, 452 difícil, 263 muito difícil) e 125 sem classificação (39 sem metadado + 86 com parâmetro não confiável).
