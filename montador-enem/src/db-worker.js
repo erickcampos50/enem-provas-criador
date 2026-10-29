@@ -16,7 +16,7 @@ const MAX_PAGE_SIZE = 100;
 let sqlite3Promise;
 let sqlite3;
 let database;
-let databaseFeatures = { inepMetadata: false, enrichment: false };
+let databaseFeatures = { inepMetadata: false, enrichment: false, resolutions: false };
 let messageQueue = Promise.resolve();
 
 function optionalQuestionJoins(alias = 'q') {
@@ -219,7 +219,7 @@ function getInitBytes(message) {
 function closeDatabase() {
   const current = database;
   database = undefined;
-  databaseFeatures = { inepMetadata: false, enrichment: false };
+  databaseFeatures = { inepMetadata: false, enrichment: false, resolutions: false };
   if (current) current.close();
 }
 
@@ -287,11 +287,12 @@ async function initDatabase(message) {
       `SELECT name
          FROM sqlite_schema
         WHERE type = 'table'
-          AND name IN ('question_inep_metadata', 'question_enrichment')`,
+          AND name IN ('question_inep_metadata', 'question_enrichment', 'question_resolutions')`,
     ).map((row) => row.name);
     databaseFeatures = {
       inepMetadata: optionalTables.includes('question_inep_metadata'),
       enrichment: optionalTables.includes('question_enrichment'),
+      resolutions: optionalTables.includes('question_resolutions'),
     };
 
     const counts = executeRows(nextDatabase, 'SELECT (SELECT count(*) FROM questions) AS question_count, (SELECT count(*) FROM exams) AS exam_count')[0];
@@ -830,6 +831,13 @@ function getQuestion(payload) {
   }
 
   const questionId = Number(asNumber(questionRow.id));
+  const resolution = databaseFeatures.resolutions ? executeRows(
+    db,
+    `SELECT body, source, source_url AS sourceUrl, source_number AS sourceNumber,
+            source_book_color AS sourceBookColor, source_answer AS sourceAnswer
+       FROM question_resolutions WHERE question_id = $questionId`,
+    { $questionId: questionId },
+  )[0] ?? null : null;
   const alternatives = executeRows(
     db,
     `SELECT id, letter, text, file_url, is_correct
@@ -867,6 +875,7 @@ function getQuestion(payload) {
     alternativesIntroduction: questionRow.alternatives_introduction ?? null,
     correctAlternative: questionRow.correct_alternative ?? null,
     sourcePath: questionRow.source_path,
+    resolution,
     alternatives,
     files: urls,
     urls,

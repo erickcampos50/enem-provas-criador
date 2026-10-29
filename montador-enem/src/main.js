@@ -8,6 +8,7 @@ import { buildVariants } from './variants.js';
 import { exportVariants, getUniqueQuestionFiles, renderHtmlDocument } from './exports.js';
 import { exportVariantsDocx } from './docx.js';
 import { renderMarkdown } from './markdown.js';
+import { hasResolution, renderResolution } from './resolutions.js';
 import {
   DIFFICULTY_BANDS,
   UNCLASSIFIED_DIFFICULTY,
@@ -51,6 +52,7 @@ let draggedId = null;
 let searchRequestId = 0;
 let modalQuestionId = null;
 let modalShowAnswer = false;
+let modalShowResolution = false;
 let urlSyncReady = false;
 
 function escapeHtml(value) {
@@ -253,7 +255,7 @@ function shell() {
         </div>
       </section>
       <div class="toast-container position-fixed bottom-0 end-0 p-3"></div>
-      <div class="modal fade" id="question-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5">Pré-visualização</h2><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body question-preview"></div><div class="modal-footer"><button class="btn btn-outline-success" id="btn-modal-answer" type="button">Resposta</button><button class="btn btn-primary" id="btn-modal-add" type="button">Adicionar</button><button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div></div>
+      <div class="modal fade" id="question-modal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5">Pré-visualização</h2><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body question-preview"></div><div class="modal-footer"><button class="btn btn-outline-success" id="btn-modal-answer" type="button">Resposta</button><button class="btn btn-outline-primary" id="btn-modal-resolution" type="button" aria-controls="modal-resolution" aria-expanded="false" disabled>Resolução indisponível</button><button class="btn btn-primary" id="btn-modal-add" type="button">Adicionar</button><button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div></div>
       <div class="modal fade" id="proof-storage-modal" tabindex="-1" aria-labelledby="proof-storage-title" aria-hidden="true"><div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="proof-storage-title">Salvar e compartilhar prova</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p id="proof-save-status" class="storage-status text-secondary" role="status" aria-live="polite">Salvamento automático ativado neste navegador.</p><div class="storage-option"><h3 class="h6">Salvar neste navegador</h3><p class="small text-secondary">Mantenha a prova disponível mesmo depois de fechar ou atualizar esta página.</p><button type="button" class="btn btn-outline-primary" id="btn-save-now">Salvar agora</button></div><div class="storage-option"><h3 class="h6">Compartilhar por link</h3><p class="small text-secondary">O link guarda a composição da prova e funciona quando a mesma base local estiver disponível.</p><button type="button" class="btn btn-primary" id="btn-create-link">Criar link compartilhável</button><div id="share-link-panel" class="d-none mt-3"><label class="form-label small" for="proof-link">Link da prova</label><div class="input-group"><input class="form-control form-control-sm" id="proof-link" readonly><button type="button" class="btn btn-outline-secondary" id="btn-copy-link">Copiar</button></div><div id="share-link-status" class="small text-secondary mt-2" role="status" aria-live="polite"></div></div></div><div class="storage-option"><h3 class="h6">Arquivo da prova</h3><p class="small text-secondary">Baixe um arquivo para guardar ou abra um arquivo recebido de outra pessoa.</p><div class="d-flex flex-wrap gap-2"><button type="button" class="btn btn-outline-primary" id="btn-download-proof">Baixar arquivo da prova</button><button type="button" class="btn btn-outline-secondary" id="btn-open-proof">Abrir arquivo da prova</button><input type="file" id="proof-file" accept="application/json,.json" class="d-none"></div></div><div class="storage-option storage-option-danger"><h3 class="h6">Limpar salvamento local</h3><p class="small text-secondary">Remove o rascunho salvo neste navegador. A prova atualmente aberta não será apagada.</p><button type="button" class="btn btn-outline-danger" id="btn-clear-draft">Limpar rascunho salvo</button></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button></div></div></div></div>
       <div class="modal fade" id="shared-proof-modal" tabindex="-1" aria-labelledby="shared-proof-title" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h2 class="modal-title h5" id="shared-proof-title">Abrir prova compartilhada</h2><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button></div><div class="modal-body"><p id="shared-proof-message"></p><div id="shared-proof-warning" class="alert alert-warning d-none" role="alert"></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Agora não</button><button type="button" class="btn btn-primary" id="btn-open-shared-proof">Abrir prova</button></div></div></div></div>
       <div class="loading-overlay" id="loading-overlay"><div class="text-center"><div class="spinner-border text-primary mb-3"></div><p id="loading-message" class="mb-0">Abrindo banco de questões…</p></div></div>
@@ -408,23 +410,36 @@ function updateModalFooterState() {
     answerBtn.classList.toggle('btn-outline-success', !modalShowAnswer);
     answerBtn.setAttribute('aria-pressed', String(modalShowAnswer));
   }
+  const resolutionBtn = document.getElementById('btn-modal-resolution');
+  if (resolutionBtn) {
+    const available = hasResolution(state.questionCache.get(modalQuestionId)?.resolution);
+    resolutionBtn.disabled = !available;
+    resolutionBtn.textContent = available ? (modalShowResolution ? 'Ocultar resolução' : 'Exibir resolução') : 'Resolução indisponível';
+    resolutionBtn.setAttribute('aria-expanded', String(available && modalShowResolution));
+  }
+}
+
+function renderModalResolution() {
+  const question = state.questionCache.get(modalQuestionId);
+  $('#modal-resolution').html(renderResolution(question?.resolution, modalShowResolution));
 }
 
 function renderModalQuestion() {
   if (modalQuestionId === null) return;
   const question = state.questionCache.get(modalQuestionId);
   if (!question?.alternatives) return;
-  $('#question-modal .modal-body').html(renderQuestion(question, modalShowAnswer));
+  $('#question-modal .modal-body').html(`${renderQuestion(question, modalShowAnswer)}<div id="modal-resolution"></div>`);
+  renderModalResolution();
   updateModalFooterState();
 }
 
 async function showPreview(id) {
   try {
-    const question = await ensureQuestion(id);
+    await ensureQuestion(id);
     modalQuestionId = Number(id);
     modalShowAnswer = false;
-    $('#question-modal .modal-body').html(renderQuestion(question, modalShowAnswer));
-    updateModalFooterState();
+    modalShowResolution = false;
+    renderModalQuestion();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('question-modal')).show();
   } catch (error) { showToast(error.message, 'danger'); }
 }
@@ -835,8 +850,16 @@ function bindEvents() {
       renderModalQuestion();
     }
   });
-  $('#question-modal').on('hidden.bs.modal', () => {
+  $('#question-modal').on('click', '#btn-modal-resolution', () => {
+    if (!hasResolution(state.questionCache.get(modalQuestionId)?.resolution)) return;
+    modalShowResolution = !modalShowResolution;
+    renderModalResolution();
+    updateModalFooterState();
+  });
+  document.getElementById('question-modal').addEventListener('hidden.bs.modal', () => {
     modalShowAnswer = false;
+    modalShowResolution = false;
+    $('#modal-resolution').empty();
     $('#question-modal .alternative[data-correct="true"]').removeClass('correct');
     updateModalFooterState();
   });

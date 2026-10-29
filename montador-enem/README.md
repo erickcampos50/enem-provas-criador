@@ -81,6 +81,39 @@ npm run repair:text -- --years 2024,2025 --extract-root ../.cache/enem-extract
 **Procedimento passo a passo para ENEM 2026+ (PDFs, microdados, enriquecimento e deploy):**  
 [`../documentation/NEW_YEAR_RUNBOOK.md`](../documentation/NEW_YEAR_RUNBOOK.md)
 
+## Resoluções do Poliedro Resolve (CSV)
+
+O site [Poliedro Resolve](https://poliedroresolve.sistemapoliedro.com.br/vestibulares/enem) publica a resolução comentada de cada questão. O coletor lê o sitemap (que inclui anos que não aparecem no seletor do site), escolhe um caderno por dia — preferindo Amarelo quando disponível — e grava tudo em um CSV único:
+
+```bash
+npm run download:poliedro -- --from 2009 --to 2025
+npm run download:poliedro -- --from 2009 --to 2025 --dias 1
+npm run download:poliedro -- --from 2024 --to 2025 --somente-com-resolucao
+```
+
+Saída padrão: `../data/poliedro/resolucoes-enem-2009-2025.csv`, com as colunas `ano`, `dia`, `caderno`, `data_prova`, `prova`, `ordem`, `tipo`, `numero`, `area`, `idioma`, `resposta`, `tem_resolucao`, `enunciado`, `resolucao`, `imagens` e `url`.
+
+**Cobertura textual:** o CSV tem resolução textual para **2024 e 2025**. Nos anos anteriores, a coluna `enunciado` contém `[imagem: URL]` e a coluna `resolucao` fica vazia (`tem_resolucao = nao`), mas a imagem pode conter a página completa com enunciado, gabarito e resolução. Portanto, campo vazio não significa ausência de resolução em imagem. Fórmulas MathML de 2024/2025 são convertidas para texto linear.
+
+**Um caderno por dia:** cada dia do ENEM tem cadernos de cores diferentes com as mesmas questões. O padrão pega um por dia (`dia 1` e `dia 2`) para não perder metade da prova. Use `--dias 1` para um único caderno por ano.
+
+### Resoluções na modal (2024/2025)
+
+As 370 resoluções textuais ficam na tabela opcional `question_resolutions`, vinculadas aos IDs existentes. A modal só insere texto e imagens da resolução após clicar em **Exibir resolução**; fechar ou abrir outra questão recolhe o painel. O botão **Resposta** é independente. Resoluções não são incluídas na prova, impressão ou exportação.
+
+```bash
+npm run import:poliedro -- --dry-run
+npm run import:poliedro -- --report ../data/poliedro/import-resolutions-report.json
+npm test
+VITE_BASE_PATH=/enem-provas-criador/ npm run build
+```
+
+O importador é transacional e pode ser reexecutado sem duplicar resoluções. Compara trigramas dos enunciados por ano e idioma, exige margem sobre a segunda candidata e confere o gabarito (ou a indicação `ANL`). Não associa pelo número: o CSV usa Amarelo e o banco de 2024/2025 usa Azul. Correspondências ambíguas ou divergentes interrompem a importação antes de gravar. O relatório registra ambos os números, idioma, caderno de origem, URL e score de cada vínculo. IDs, alternativas e enriquecimento INEP não são alterados.
+
+O texto linear do CSV é exibido literalmente para preservar fórmulas e desigualdades; apenas marcadores `[imagem: URL]` dentro da própria resolução viram imagens. O campo genérico `imagens` não é usado, pois mistura figuras do enunciado e da resolução. Imagens remotas dependem de conexão. A origem e o link ficam registrados apenas internamente; a interface exibe somente o título “Resolução” e seu conteúdo. Após reconstruir o banco do zero, execute novamente a importação das resoluções.
+
+Com a build servida por `npm run preview:pages`, execute `npm run test:resolutions:browser` para validar as 370 resoluções no worker WASM e o comportamento da modal (incluindo layout móvel). Use `MONTADOR_TEST_URL` para outro endereço e `PLAYWRIGHT_CHANNEL=chrome` para usar o Chrome instalado, em vez do Chromium do Playwright.
+
 ## Enriquecimento com microdados do INEP
 
 O procedimento completo para auditar, aplicar e publicar o enriquecimento das questões está documentado em:
